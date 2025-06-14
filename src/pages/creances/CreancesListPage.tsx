@@ -13,7 +13,7 @@ import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { Facture } from '../../types';
-import { creancesAPI } from '../../services/api';
+import axios from 'axios';
 
 const CreancesListPage: React.FC = () => {
   const [creances, setCreances] = useState<Facture[]>([]);
@@ -23,20 +23,45 @@ const CreancesListPage: React.FC = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showRelanceModal, setShowRelanceModal] = useState(false);
   const [relanceMessage, setRelanceMessage] = useState('');
+  const [stats, setStats] = useState({
+    totalCreances: 0,
+    totalFactures: 0,
+    avgDaysLate: 0
+  });
 
   useEffect(() => {
     fetchCreances();
+    fetchStats();
   }, []);
 
   const fetchCreances = async () => {
     try {
       setLoading(true);
-      const response = await creancesAPI.getAll();
-      setCreances(response.data.data);
+      const response = await axios.get('/api/creances');
+      
+      if (response.data.success) {
+        setCreances(response.data.data);
+      } else {
+        throw new Error(response.data.message || 'Failed to load unpaid invoices');
+      }
     } catch (error) {
-      console.error('Erreur lors du chargement des créances:', error);
+      console.error('Error loading unpaid invoices:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const response = await axios.get('/api/creances/stats');
+      
+      if (response.data.success) {
+        setStats(response.data.data);
+      } else {
+        throw new Error(response.data.message || 'Failed to load stats');
+      }
+    } catch (error) {
+      console.error('Error loading stats:', error);
     }
   };
 
@@ -49,13 +74,42 @@ const CreancesListPage: React.FC = () => {
   };
 
   const handleSendReminder = async (creanceId: string) => {
-    try {
-      await creancesAPI.sendReminder(creanceId, relanceMessage);
-      setShowRelanceModal(false);
-      setRelanceMessage('');
-    } catch (error) {
-      console.error('Erreur lors de l\'envoi de la relance:', error);
+    if (!relanceMessage.trim()) {
+      alert('Veuillez saisir un message de relance');
+      return;
     }
+    
+    try {
+      const response = await axios.post(`/api/creances/${creanceId}/reminder`, {
+        message: relanceMessage
+      });
+      
+      if (response.data.success) {
+        alert('Relance envoyée avec succès');
+        setShowRelanceModal(false);
+        setRelanceMessage('');
+      } else {
+        throw new Error(response.data.message || 'Failed to send reminder');
+      }
+    } catch (error) {
+      console.error('Error sending reminder:', error);
+      alert('Une erreur est survenue lors de l\'envoi de la relance');
+    }
+  };
+
+  const prepareRelanceMessage = (creance: Facture) => {
+    const message = `Madame, Monsieur,
+
+Nous vous rappelons que la facture ${creance.numero} d'un montant de ${creance.montantTTC.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })} est échue depuis le ${new Date(creance.dateEcheance).toLocaleDateString('fr-FR')}.
+
+Nous vous remercions de bien vouloir procéder au règlement dans les plus brefs délais.
+
+Cordialement,
+L'équipe SamTech`;
+    
+    setRelanceMessage(message);
+    setSelectedCreance(creance);
+    setShowRelanceModal(true);
   };
 
   const filteredCreances = creances.filter(creance => {
@@ -105,7 +159,7 @@ const CreancesListPage: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Factures en retard</p>
-              <p className="text-2xl font-bold text-gray-900">{creances.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalFactures}</p>
             </div>
           </div>
         </div>
@@ -118,7 +172,7 @@ const CreancesListPage: React.FC = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Retard moyen</p>
               <p className="text-2xl font-bold text-gray-900">
-                {Math.round(creances.reduce((sum, c) => sum + calculateDaysLate(c.dateEcheance), 0) / creances.length || 0)} jours
+                {stats.avgDaysLate} jours
               </p>
             </div>
           </div>
@@ -132,7 +186,7 @@ const CreancesListPage: React.FC = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Montant moyen</p>
               <p className="text-2xl font-bold text-gray-900">
-                {(totalCreances / creances.length || 0).toLocaleString('fr-FR', { 
+                {(stats.totalCreances / (stats.totalFactures || 1)).toLocaleString('fr-FR', { 
                   style: 'currency', 
                   currency: 'EUR' 
                 })}
@@ -226,18 +280,7 @@ const CreancesListPage: React.FC = () => {
                       </button>
                       
                       <button
-                        onClick={() => {
-                          setSelectedCreance(creance);
-                          setRelanceMessage(`Madame, Monsieur,
-
-Nous vous rappelons que la facture ${creance.numero} d'un montant de ${creance.montantTTC.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })} est échue depuis le ${new Date(creance.dateEcheance).toLocaleDateString('fr-FR')}.
-
-Nous vous remercions de bien vouloir procéder au règlement dans les plus brefs délais.
-
-Cordialement,
-L'équipe SamTech`);
-                          setShowRelanceModal(true);
-                        }}
+                        onClick={() => prepareRelanceMessage(creance)}
                         className="p-1 text-orange-600 hover:bg-orange-100 rounded"
                         title="Envoyer une relance"
                       >
@@ -330,15 +373,7 @@ L'équipe SamTech`);
               <button 
                 onClick={() => {
                   setShowDetailModal(false);
-                  setRelanceMessage(`Madame, Monsieur,
-
-Nous vous rappelons que la facture ${selectedCreance.numero} d'un montant de ${selectedCreance.montantTTC.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })} est échue depuis le ${new Date(selectedCreance.dateEcheance).toLocaleDateString('fr-FR')}.
-
-Nous vous remercions de bien vouloir procéder au règlement dans les plus brefs délais.
-
-Cordialement,
-L'équipe SamTech`);
-                  setShowRelanceModal(true);
+                  prepareRelanceMessage(selectedCreance);
                 }}
                 className="btn-secondary"
               >

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import axios from 'axios';
 
 interface ProfileData {
   // Informations générales
@@ -73,42 +74,25 @@ const ProfilePage: React.FC = () => {
   });
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Mock data - à remplacer par un vrai appel API
-        setProfileData({
-          nomAgence: 'Voyages Express',
-          typeActivite: 'agence-voyage',
-          siret: '12345678901234',
-          logo: null,
-          logoUrl: '/api/placeholder/150/150',
-          adresse: '123 Rue de la Paix',
-          ville: 'Paris',
-          codePostal: '75001',
-          pays: 'France',
-          telephone: '+33 1 23 45 67 89',
-          email: user?.email || '',
-          siteWeb: 'https://www.voyages-express.com',
-          raisonSociale: 'Voyages Express SARL',
-          numeroTVA: 'FR12345678901',
-          numeroLicence: 'IM075110001',
-          garantieFinanciere: 'APST - 15 Avenue Carnot, 75017 Paris',
-          assuranceRC: 'AXA Assurances - Police n° 123456789',
-          banque: 'Crédit Agricole',
-          rib: 'FR76 1234 5678 9012 3456 7890 123',
-          swift: 'AGRIFRPP'
-        });
-      } catch (error) {
-        console.error('Erreur lors du chargement du profil:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchProfile();
-  }, [user]);
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('/api/profile');
+      
+      if (response.data.success) {
+        setProfileData(response.data.data);
+      } else {
+        throw new Error(response.data.message || 'Failed to load profile');
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (field: keyof ProfileData, value: any) => {
     setProfileData(prev => ({ ...prev, [field]: value }));
@@ -118,20 +102,41 @@ const ProfilePage: React.FC = () => {
     const file = event.target.files?.[0];
     if (file) {
       handleInputChange('logo', file);
-      // Créer une URL temporaire pour l'aperçu
-      const url = URL.createObjectURL(file);
-      handleInputChange('logoUrl', url);
+      
+      // Create a temporary URL for preview
+      const formData = new FormData();
+      formData.append('logo', file);
+      
+      axios.post('/api/profile/logo', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+      .then(response => {
+        if (response.data.success) {
+          handleInputChange('logoUrl', response.data.data.logoUrl);
+        }
+      })
+      .catch(error => {
+        console.error('Error uploading logo:', error);
+      });
     }
   };
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('Profil sauvegardé:', profileData);
-      // Afficher un message de succès
+      const response = await axios.put('/api/profile', profileData);
+      
+      if (response.data.success) {
+        // Show success message
+        alert('Profil mis à jour avec succès');
+      } else {
+        throw new Error(response.data.message || 'Failed to update profile');
+      }
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde:', error);
+      console.error('Error saving profile:', error);
+      alert('Une erreur est survenue lors de la sauvegarde');
     } finally {
       setSaving(false);
     }

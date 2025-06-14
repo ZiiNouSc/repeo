@@ -13,7 +13,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHeaderCell, TableCell } f
 import Badge from '../../components/ui/Badge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { Agence, Ticket as TicketType } from '../../types';
-import { dashboardAPI, agencesAPI, ticketsAPI } from '../../services/api';
+import axios from 'axios';
 
 const SuperadminDashboard: React.FC = () => {
   const [stats, setStats] = useState({
@@ -33,30 +33,23 @@ const SuperadminDashboard: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      const response = await axios.get('/api/dashboard/superadmin/stats');
       
-      // Fetch dashboard stats
-      const statsResponse = await dashboardAPI.getSuperadminStats();
-      const statsData = statsResponse.data.data;
-      
-      setStats({
-        totalAgences: statsData.totalAgences,
-        agencesApprouvees: statsData.agencesApprouvees,
-        agencesEnAttente: statsData.agencesEnAttente,
-        ticketsOuverts: statsData.ticketsOuverts
-      });
-
-      // Fetch recent agencies
-      const agencesResponse = await agencesAPI.getAll();
-      const agences = agencesResponse.data.data;
-      setRecentAgencies(agences.slice(0, 5));
-
-      // Fetch recent tickets
-      const ticketsResponse = await ticketsAPI.getAll();
-      const tickets = ticketsResponse.data.data;
-      setRecentTickets(tickets.slice(0, 5));
-      
+      if (response.data.success) {
+        const data = response.data.data;
+        setStats({
+          totalAgences: data.totalAgences,
+          agencesApprouvees: data.agencesApprouvees,
+          agencesEnAttente: data.agencesEnAttente,
+          ticketsOuverts: data.ticketsOuverts
+        });
+        setRecentAgencies(data.recentAgencies);
+        setRecentTickets(data.recentTickets);
+      } else {
+        throw new Error(response.data.message || 'Failed to load dashboard data');
+      }
     } catch (error) {
-      console.error('Erreur lors du chargement des données:', error);
+      console.error('Error loading dashboard data:', error);
     } finally {
       setLoading(false);
     }
@@ -175,14 +168,6 @@ const SuperadminDashboard: React.FC = () => {
                   </TableCell>
                 </TableRow>
               ))}
-              
-              {recentAgencies.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center py-4">
-                    <p className="text-gray-500">Aucune agence récente</p>
-                  </TableCell>
-                </TableRow>
-              )}
             </TableBody>
           </Table>
         </div>
@@ -226,12 +211,6 @@ const SuperadminDashboard: React.FC = () => {
                 </div>
               </div>
             ))}
-            
-            {recentTickets.length === 0 && (
-              <div className="text-center py-4">
-                <p className="text-gray-500">Aucun ticket récent</p>
-              </div>
-            )}
           </div>
         </div>
       </div>

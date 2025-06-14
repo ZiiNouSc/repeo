@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
+const fs = require('fs');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -20,6 +21,15 @@ const documentsRoutes = require('./routes/documents');
 const dashboardRoutes = require('./routes/dashboard');
 const creancesRoutes = require('./routes/creances');
 const reservationsRoutes = require('./routes/reservations');
+const profileRoutes = require('./routes/profile');
+const parametresRoutes = require('./routes/parametres');
+const vitrineRoutes = require('./routes/vitrine');
+const rapportsRoutes = require('./routes/rapports');
+const notificationsRoutes = require('./routes/notifications');
+const calendrierRoutes = require('./routes/calendrier');
+const logsRoutes = require('./routes/logs');
+const permissionsRoutes = require('./routes/permissions');
+const auditRoutes = require('./routes/audit');
 
 // Initialize express app
 const app = express();
@@ -31,7 +41,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Routes
-app.use('/api', authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/clients', clientsRoutes);
 app.use('/api/fournisseurs', fournisseursRoutes);
 app.use('/api/factures', facturesRoutes);
@@ -47,6 +57,25 @@ app.use('/api/documents', documentsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/creances', creancesRoutes);
 app.use('/api/reservations', reservationsRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/parametres', parametresRoutes);
+app.use('/api/vitrine', vitrineRoutes);
+app.use('/api/rapports', rapportsRoutes);
+app.use('/api/notifications', notificationsRoutes);
+app.use('/api/calendrier', calendrierRoutes);
+app.use('/api/logs', logsRoutes);
+app.use('/api/permissions', permissionsRoutes);
+app.use('/api/audit', auditRoutes);
+
+// Placeholder for PDF generation
+app.get('/api/factures/:id/pdf', (req, res) => {
+  // In a real app, this would generate a PDF
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="facture-${req.params.id}.pdf"`);
+  
+  // Send a placeholder PDF (just some text)
+  res.send('This is a placeholder for a PDF file');
+});
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {

@@ -15,6 +15,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import Badge from '../../components/ui/Badge';
+import axios from 'axios';
 
 interface ParametresData {
   // Paramètres généraux
@@ -58,6 +59,7 @@ const ParametresPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
+  const [backupInProgress, setBackupInProgress] = useState(false);
 
   useEffect(() => {
     fetchParametres();
@@ -65,57 +67,18 @@ const ParametresPage: React.FC = () => {
 
   const fetchParametres = async () => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      setLoading(true);
+      const response = await axios.get('/api/parametres');
       
-      // Mock data - à remplacer par un vrai appel API
-      setData({
-        nomAgence: 'Voyages Express',
-        fuseau: 'Europe/Paris',
-        langue: 'fr',
-        devise: 'EUR',
-        
-        emailNotifications: true,
-        smsNotifications: false,
-        notificationFactures: true,
-        notificationPaiements: true,
-        notificationRappels: true,
-        
-        authentificationDouble: false,
-        sessionTimeout: 30,
-        tentativesConnexion: 5,
-        
-        numeroFactureAuto: true,
-        prefixeFacture: 'FAC',
-        tvaDefaut: 20,
-        conditionsPaiement: '30 jours',
-        
-        sauvegardeAuto: true,
-        frequenceSauvegarde: 'quotidienne',
-        derniereSauvegarde: '2024-01-15T02:00:00Z',
-        
-        apiKey: 'sk_live_xxxxxxxxxxxxxxxxxxxxxxxx',
-        webhookUrl: 'https://votre-agence.com/webhook',
-        integrationComptable: false
-      });
+      if (response.data.success) {
+        setData(response.data.data);
+      } else {
+        throw new Error(response.data.message || 'Failed to load settings');
+      }
     } catch (error) {
-      console.error('Erreur lors du chargement des paramètres:', error);
+      console.error('Error loading settings:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    if (!data) return;
-    
-    setSaving(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('Paramètres sauvegardés:', data);
-      // Afficher un message de succès
-    } catch (error) {
-      console.error('Erreur lors de la sauvegarde:', error);
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -123,23 +86,62 @@ const ParametresPage: React.FC = () => {
     setData(prev => prev ? { ...prev, [field]: value } : null);
   };
 
-  const handleBackup = async () => {
+  const handleSave = async () => {
+    if (!data) return;
+    
+    setSaving(true);
     try {
-      console.log('Sauvegarde manuelle déclenchée');
-      // Simuler une sauvegarde
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      setData(prev => prev ? { 
-        ...prev, 
-        derniereSauvegarde: new Date().toISOString() 
-      } : null);
+      const response = await axios.put('/api/parametres', data);
+      
+      if (response.data.success) {
+        alert('Paramètres sauvegardés avec succès');
+      } else {
+        throw new Error(response.data.message || 'Failed to save settings');
+      }
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde:', error);
+      console.error('Error saving settings:', error);
+      alert('Une erreur est survenue lors de la sauvegarde');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const generateApiKey = () => {
-    const newKey = 'sk_live_' + Math.random().toString(36).substring(2, 28);
-    handleInputChange('apiKey', newKey);
+  const handleBackup = async () => {
+    try {
+      setBackupInProgress(true);
+      const response = await axios.post('/api/parametres/backup');
+      
+      if (response.data.success) {
+        setData(prev => prev ? { 
+          ...prev, 
+          derniereSauvegarde: response.data.data.derniereSauvegarde 
+        } : null);
+        alert('Sauvegarde effectuée avec succès');
+      } else {
+        throw new Error(response.data.message || 'Failed to backup');
+      }
+    } catch (error) {
+      console.error('Error during backup:', error);
+      alert('Une erreur est survenue lors de la sauvegarde');
+    } finally {
+      setBackupInProgress(false);
+    }
+  };
+
+  const generateApiKey = async () => {
+    try {
+      const response = await axios.post('/api/parametres/generate-api-key');
+      
+      if (response.data.success) {
+        setData(prev => prev ? { ...prev, apiKey: response.data.data.apiKey } : null);
+        alert('Nouvelle clé API générée avec succès');
+      } else {
+        throw new Error(response.data.message || 'Failed to generate API key');
+      }
+    } catch (error) {
+      console.error('Error generating API key:', error);
+      alert('Une erreur est survenue lors de la génération de la clé API');
+    }
   };
 
   const tabs = [
@@ -468,9 +470,14 @@ const ParametresPage: React.FC = () => {
               
               <button
                 onClick={handleBackup}
-                className="btn-secondary"
+                disabled={backupInProgress}
+                className="btn-secondary flex items-center"
               >
-                <Database className="w-4 h-4 mr-2" />
+                {backupInProgress ? (
+                  <LoadingSpinner size="sm" className="mr-2" />
+                ) : (
+                  <Database className="w-4 h-4 mr-2" />
+                )}
                 Sauvegarder maintenant
               </button>
             </div>
@@ -569,7 +576,7 @@ const ParametresPage: React.FC = () => {
           className="btn-primary flex items-center"
         >
           {saving ? (
-            <LoadingSpinner size="sm\" className="mr-2" />
+            <LoadingSpinner size="sm" className="mr-2" />
           ) : (
             <Save className="w-4 h-4 mr-2" />
           )}

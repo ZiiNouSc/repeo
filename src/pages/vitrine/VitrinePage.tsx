@@ -14,6 +14,7 @@ import {
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
+import axios from 'axios';
 
 interface VitrineConfig {
   isActive: boolean;
@@ -54,36 +55,16 @@ const VitrinePage: React.FC = () => {
 
   const fetchVitrineConfig = async () => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      setLoading(true);
+      const response = await axios.get('/api/vitrine');
       
-      // Mock data - à remplacer par un vrai appel API
-      setConfig({
-        isActive: true,
-        domainName: 'voyages-express.samtech.fr',
-        title: 'Voyages Express - Votre Agence de Voyage',
-        description: 'Découvrez nos offres de voyage exceptionnelles et partez à la découverte du monde avec Voyages Express.',
-        logo: '/api/placeholder/200/80',
-        bannerImage: '/api/placeholder/1200/400',
-        primaryColor: '#3B82F6',
-        secondaryColor: '#1E40AF',
-        showPackages: true,
-        showContact: true,
-        showAbout: true,
-        contactInfo: {
-          phone: '+33 1 23 45 67 89',
-          email: 'contact@voyages-express.com',
-          address: '123 Rue de la Paix, 75001 Paris',
-          hours: 'Lun-Ven: 9h-18h, Sam: 9h-12h'
-        },
-        aboutText: 'Voyages Express est votre partenaire de confiance pour tous vos projets de voyage. Avec plus de 15 ans d\'expérience, nous vous accompagnons dans la réalisation de vos rêves d\'évasion.',
-        socialLinks: {
-          facebook: 'https://facebook.com/voyages-express',
-          instagram: 'https://instagram.com/voyages-express',
-          twitter: 'https://twitter.com/voyages-express'
-        }
-      });
+      if (response.data.success) {
+        setConfig(response.data.data);
+      } else {
+        throw new Error(response.data.message || 'Failed to load vitrine config');
+      }
     } catch (error) {
-      console.error('Erreur lors du chargement de la configuration:', error);
+      console.error('Error loading vitrine config:', error);
     } finally {
       setLoading(false);
     }
@@ -94,11 +75,16 @@ const VitrinePage: React.FC = () => {
     
     setSaving(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('Configuration sauvegardée:', config);
-      // Afficher un message de succès
+      const response = await axios.put('/api/vitrine', config);
+      
+      if (response.data.success) {
+        alert('Configuration de la vitrine sauvegardée avec succès');
+      } else {
+        throw new Error(response.data.message || 'Failed to save vitrine config');
+      }
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde:', error);
+      console.error('Error saving vitrine config:', error);
+      alert('Une erreur est survenue lors de la sauvegarde');
     } finally {
       setSaving(false);
     }
@@ -107,7 +93,18 @@ const VitrinePage: React.FC = () => {
   const handleToggleActive = async () => {
     if (!config) return;
     
-    setConfig(prev => prev ? { ...prev, isActive: !prev.isActive } : null);
+    try {
+      const response = await axios.put('/api/vitrine/toggle');
+      
+      if (response.data.success) {
+        setConfig(prev => prev ? { ...prev, isActive: !prev.isActive } : null);
+      } else {
+        throw new Error(response.data.message || 'Failed to toggle vitrine status');
+      }
+    } catch (error) {
+      console.error('Error toggling vitrine status:', error);
+      alert('Une erreur est survenue lors du changement de statut');
+    }
   };
 
   const handleInputChange = (field: string, value: any) => {
@@ -511,7 +508,7 @@ const VitrinePage: React.FC = () => {
             className="btn-primary flex items-center"
           >
             {saving ? (
-              <LoadingSpinner size="sm\" className="mr-2" />
+              <LoadingSpinner size="sm" className="mr-2" />
             ) : (
               <Save className="w-4 h-4 mr-2" />
             )}

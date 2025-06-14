@@ -13,7 +13,7 @@ import { Link } from 'react-router-dom';
 import { Table, TableHeader, TableBody, TableRow, TableHeaderCell, TableCell } from '../../components/ui/Table';
 import Badge from '../../components/ui/Badge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
-import { dashboardAPI } from '../../services/api';
+import axios from 'axios';
 
 const AgenceDashboard: React.FC = () => {
   const [stats, setStats] = useState({
@@ -34,21 +34,24 @@ const AgenceDashboard: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await dashboardAPI.getAgenceStats();
-      const data = response.data.data;
+      const response = await axios.get('/api/dashboard/agence/stats');
       
-      setStats({
-        totalClients: data.totalClients,
-        facturesEnAttente: data.facturesEnAttente,
-        chiffreAffaireMois: data.chiffreAffaireMois,
-        soldeCaisse: data.soldeCaisse,
-        facturesImpayees: data.facturesImpayees || 0,
-        bonCommandeEnCours: data.bonCommandeEnCours || 0
-      });
-
-      setRecentActivities(data.recentActivities || []);
+      if (response.data.success) {
+        const data = response.data.data;
+        setStats({
+          totalClients: data.totalClients,
+          facturesEnAttente: data.facturesEnAttente,
+          chiffreAffaireMois: data.chiffreAffaireMois,
+          soldeCaisse: data.soldeCaisse,
+          facturesImpayees: data.facturesImpayees || 0,
+          bonCommandeEnCours: data.bonCommandeEnCours || 0
+        });
+        setRecentActivities(data.recentActivities);
+      } else {
+        throw new Error(response.data.message || 'Failed to load dashboard data');
+      }
     } catch (error) {
-      console.error('Erreur lors du chargement des données:', error);
+      console.error('Error loading dashboard data:', error);
     } finally {
       setLoading(false);
     }
@@ -189,12 +192,6 @@ const AgenceDashboard: React.FC = () => {
                 </div>
               </div>
             ))}
-            
-            {recentActivities.length === 0 && (
-              <div className="text-center py-4">
-                <p className="text-gray-500">Aucune activité récente</p>
-              </div>
-            )}
           </div>
         </div>
 
@@ -258,12 +255,6 @@ const AgenceDashboard: React.FC = () => {
                   <p className="text-xs text-yellow-600">À convertir en factures</p>
                 </div>
               </Link>
-            )}
-            
-            {stats.facturesImpayees === 0 && stats.bonCommandeEnCours === 0 && (
-              <div className="text-center py-4">
-                <p className="text-gray-500">Aucune alerte</p>
-              </div>
             )}
           </div>
         </div>

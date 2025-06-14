@@ -17,7 +17,7 @@ import Modal from '../../components/ui/Modal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { OperationCaisse } from '../../types';
 import { usePermissions } from '../../hooks/usePermissions';
-import { caisseAPI } from '../../services/api';
+import axios from 'axios';
 
 const CaissePage: React.FC = () => {
   const [operations, setOperations] = useState<OperationCaisse[]>([]);
@@ -28,6 +28,7 @@ const CaissePage: React.FC = () => {
   const [selectedOperation, setSelectedOperation] = useState<OperationCaisse | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [solde, setSolde] = useState({ total: 0, entrees: 0, sorties: 0 });
   const { hasPermission } = usePermissions();
 
   const [formData, setFormData] = useState({
@@ -54,15 +55,21 @@ const CaissePage: React.FC = () => {
 
   useEffect(() => {
     fetchOperations();
+    fetchSolde();
   }, []);
 
   const fetchOperations = async () => {
     try {
       setLoading(true);
-      const response = await caisseAPI.getOperations();
-      setOperations(response.data.data);
+      const response = await axios.get('/api/caisse/operations');
+      
+      if (response.data.success) {
+        setOperations(response.data.data);
+      } else {
+        throw new Error(response.data.message || 'Failed to load operations');
+      }
     } catch (error) {
-      console.error('Erreur lors du chargement des opérations:', error);
+      console.error('Error loading operations:', error);
     } finally {
       setLoading(false);
     }
@@ -70,11 +77,19 @@ const CaissePage: React.FC = () => {
 
   const fetchSolde = async () => {
     try {
-      const response = await caisseAPI.getSolde();
-      return response.data.data;
+      const response = await axios.get('/api/caisse/solde');
+      
+      if (response.data.success) {
+        setSolde({
+          total: response.data.data.solde,
+          entrees: response.data.data.entrees,
+          sorties: response.data.data.sorties
+        });
+      } else {
+        throw new Error(response.data.message || 'Failed to load balance');
+      }
     } catch (error) {
-      console.error('Erreur lors du chargement du solde:', error);
-      return { solde: 0, entrees: 0, sorties: 0 };
+      console.error('Error loading balance:', error);
     }
   };
 
@@ -82,20 +97,31 @@ const CaissePage: React.FC = () => {
     if (!formData.montant || !formData.description || !formData.categorie) return;
 
     try {
-      const response = await caisseAPI.addOperation({
+      const response = await axios.post('/api/caisse/operations', {
         type: formData.type,
         montant: parseFloat(formData.montant),
         description: formData.description,
         categorie: formData.categorie,
         reference: formData.reference,
-        date: new Date(formData.date).toISOString()
+        date: formData.date
       });
       
-      setOperations(prev => [response.data.data, ...prev]);
-      setShowAddModal(false);
-      resetForm();
+      if (response.data.success) {
+        // Add the new operation to the list
+        setOperations(prev => [response.data.data, ...prev]);
+        
+        // Update the balance
+        fetchSolde();
+        
+        // Close the modal and reset form
+        setShowAddModal(false);
+        resetForm();
+      } else {
+        throw new Error(response.data.message || 'Failed to add operation');
+      }
     } catch (error) {
-      console.error('Erreur lors de l\'ajout:', error);
+      console.error('Error adding operation:', error);
+      alert('Une erreur est survenue lors de l\'ajout');
     }
   };
 
@@ -103,23 +129,34 @@ const CaissePage: React.FC = () => {
     if (!selectedOperation || !formData.montant || !formData.description || !formData.categorie) return;
 
     try {
-      const response = await caisseAPI.updateOperation(selectedOperation.id, {
+      const response = await axios.put(`/api/caisse/operations/${selectedOperation.id}`, {
         type: formData.type,
         montant: parseFloat(formData.montant),
         description: formData.description,
         categorie: formData.categorie,
         reference: formData.reference,
-        date: new Date(formData.date).toISOString()
+        date: formData.date
       });
-
-      setOperations(prev => prev.map(op => 
-        op.id === selectedOperation.id ? response.data.data : op
-      ));
-      setShowEditModal(false);
-      setSelectedOperation(null);
-      resetForm();
+      
+      if (response.data.success) {
+        // Update the operation in the list
+        setOperations(prev => prev.map(op => 
+          op.id === selectedOperation.id ? response.data.data : op
+        ));
+        
+        // Update the balance
+        fetchSolde();
+        
+        // Close the modal and reset
+        setShowEditModal(false);
+        setSelectedOperation(null);
+        resetForm();
+      } else {
+        throw new Error(response.data.message || 'Failed to update operation');
+      }
     } catch (error) {
-      console.error('Erreur lors de la modification:', error);
+      console.error('Error updating operation:', error);
+      alert('Une erreur est survenue lors de la modification');
     }
   };
 
@@ -127,12 +164,24 @@ const CaissePage: React.FC = () => {
     if (!selectedOperation) return;
 
     try {
-      await caisseAPI.deleteOperation(selectedOperation.id);
-      setOperations(prev => prev.filter(op => op.id !== selectedOperation.id));
-      setShowDeleteModal(false);
-      setSelectedOperation(null);
+      const response = await axios.delete(`/api/caisse/operations/${selectedOperation.id}`);
+      
+      if (response.data.success) {
+        // Remove the operation from the list
+        setOperations(prev => prev.filter(op => op.id !== selectedOperation.id));
+        
+        // Update the balance
+        fetchSolde();
+        
+        // Close the modal and reset
+        setShowDeleteModal(false);
+        setSelectedOperation(null);
+      } else {
+        throw new Error(response.data.message || 'Failed to delete operation');
+      }
     } catch (error) {
-      console.error('Erreur lors de la suppression:', error);
+      console.error('Error deleting operation:', error);
+      alert('Une erreur est survenue lors de la suppression');
     }
   };
 
@@ -167,17 +216,6 @@ const CaissePage: React.FC = () => {
     const matchesType = typeFilter === 'tous' || operation.type === typeFilter;
     return matchesSearch && matchesType;
   });
-
-  // Calculs
-  const totalEntrees = operations
-    .filter(op => op.type === 'entree')
-    .reduce((sum, op) => sum + op.montant, 0);
-  
-  const totalSorties = operations
-    .filter(op => op.type === 'sortie')
-    .reduce((sum, op) => sum + op.montant, 0);
-  
-  const solde = totalEntrees - totalSorties;
 
   if (loading) {
     return (
@@ -222,7 +260,7 @@ const CaissePage: React.FC = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Entrées</p>
               <p className="text-2xl font-bold text-green-600">
-                {totalEntrees.toLocaleString('fr-FR', { 
+                {solde.entrees.toLocaleString('fr-FR', { 
                   style: 'currency', 
                   currency: 'EUR' 
                 })}
@@ -239,7 +277,7 @@ const CaissePage: React.FC = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Sorties</p>
               <p className="text-2xl font-bold text-red-600">
-                {totalSorties.toLocaleString('fr-FR', { 
+                {solde.sorties.toLocaleString('fr-FR', { 
                   style: 'currency', 
                   currency: 'EUR' 
                 })}
@@ -250,13 +288,13 @@ const CaissePage: React.FC = () => {
         
         <div className="card">
           <div className="flex items-center">
-            <div className={`p-3 rounded-lg ${solde >= 0 ? 'bg-blue-100' : 'bg-orange-100'}`}>
-              <Wallet className={`w-6 h-6 ${solde >= 0 ? 'text-blue-600' : 'text-orange-600'}`} />
+            <div className={`p-3 rounded-lg ${solde.total >= 0 ? 'bg-blue-100' : 'bg-orange-100'}`}>
+              <Wallet className={`w-6 h-6 ${solde.total >= 0 ? 'text-blue-600' : 'text-orange-600'}`} />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Solde</p>
-              <p className={`text-2xl font-bold ${solde >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
-                {solde.toLocaleString('fr-FR', { 
+              <p className={`text-2xl font-bold ${solde.total >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
+                {solde.total.toLocaleString('fr-FR', { 
                   style: 'currency', 
                   currency: 'EUR' 
                 })}

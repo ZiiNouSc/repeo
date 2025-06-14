@@ -17,7 +17,7 @@ import Modal from '../../components/ui/Modal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { BonCommande } from '../../types';
 import { usePermissions } from '../../hooks/usePermissions';
-import { bonCommandeAPI } from '../../services/api';
+import axios from 'axios';
 
 const BonsCommandeListPage: React.FC = () => {
   const [bonsCommande, setBonsCommande] = useState<BonCommande[]>([]);
@@ -35,10 +35,15 @@ const BonsCommandeListPage: React.FC = () => {
   const fetchBonsCommande = async () => {
     try {
       setLoading(true);
-      const response = await bonCommandeAPI.getAll();
-      setBonsCommande(response.data.data);
+      const response = await axios.get('/api/bons-commande');
+      
+      if (response.data.success) {
+        setBonsCommande(response.data.data);
+      } else {
+        throw new Error(response.data.message || 'Failed to load purchase orders');
+      }
     } catch (error) {
-      console.error('Erreur lors du chargement des bons de commande:', error);
+      console.error('Error loading purchase orders:', error);
     } finally {
       setLoading(false);
     }
@@ -46,14 +51,27 @@ const BonsCommandeListPage: React.FC = () => {
 
   const handleConvertToInvoice = async (bonId: string) => {
     try {
-      await bonCommandeAPI.convertToInvoice(bonId);
-      setBonsCommande(prev => prev.map(bon => 
-        bon.id === bonId 
-          ? { ...bon, statut: 'facture' as const }
-          : bon
-      ));
+      const response = await axios.post(`/api/bons-commande/${bonId}/convert`);
+      
+      if (response.data.success) {
+        // Update the local state
+        setBonsCommande(prev => prev.map(bon => 
+          bon.id === bonId 
+            ? { ...bon, statut: 'facture' as const }
+            : bon
+        ));
+        
+        // Close the modal if open
+        setShowDetailModal(false);
+        
+        // Show success message
+        alert('Bon de commande converti en facture avec succès');
+      } else {
+        throw new Error(response.data.message || 'Failed to convert to invoice');
+      }
     } catch (error) {
-      console.error('Erreur lors de la conversion:', error);
+      console.error('Error converting to invoice:', error);
+      alert('Une erreur est survenue lors de la conversion');
     }
   };
 

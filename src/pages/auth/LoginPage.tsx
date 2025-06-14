@@ -3,6 +3,7 @@ import { Navigate, useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import axios from 'axios';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -12,7 +13,7 @@ const LoginPage: React.FC = () => {
   const { login, user, isLoading } = useAuth();
   const navigate = useNavigate();
 
-  // Rediriger si déjà connecté
+  // Redirect if already logged in
   if (user) {
     return <Navigate to="/dashboard" replace />;
   }

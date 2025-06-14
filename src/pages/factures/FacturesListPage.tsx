@@ -18,7 +18,7 @@ import Modal from '../../components/ui/Modal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { Facture } from '../../types';
 import { usePermissions } from '../../hooks/usePermissions';
-import { facturesAPI } from '../../services/api';
+import axios from 'axios';
 
 const FacturesListPage: React.FC = () => {
   const [factures, setFactures] = useState<Facture[]>([]);
@@ -36,10 +36,15 @@ const FacturesListPage: React.FC = () => {
   const fetchFactures = async () => {
     try {
       setLoading(true);
-      const response = await facturesAPI.getAll();
-      setFactures(response.data.data);
+      const response = await axios.get('/api/factures');
+      
+      if (response.data.success) {
+        setFactures(response.data.data);
+      } else {
+        throw new Error(response.data.message || 'Failed to load invoices');
+      }
     } catch (error) {
-      console.error('Erreur lors du chargement des factures:', error);
+      console.error('Error loading invoices:', error);
     } finally {
       setLoading(false);
     }
@@ -47,14 +52,47 @@ const FacturesListPage: React.FC = () => {
 
   const handleMarkAsPaid = async (factureId: string) => {
     try {
-      await facturesAPI.markAsPaid(factureId);
-      setFactures(prev => prev.map(facture => 
-        facture.id === factureId 
-          ? { ...facture, statut: 'payee' as const }
-          : facture
-      ));
+      const response = await axios.put(`/api/factures/${factureId}/pay`);
+      
+      if (response.data.success) {
+        // Update the local state
+        setFactures(prev => prev.map(facture => 
+          facture.id === factureId 
+            ? { ...facture, statut: 'payee' as const }
+            : facture
+        ));
+        
+        // If the selected facture is the one being marked as paid, update it too
+        if (selectedFacture && selectedFacture.id === factureId) {
+          setSelectedFacture({ ...selectedFacture, statut: 'payee' });
+        }
+      } else {
+        throw new Error(response.data.message || 'Failed to mark invoice as paid');
+      }
     } catch (error) {
-      console.error('Erreur lors du marquage comme payée:', error);
+      console.error('Error marking invoice as paid:', error);
+      alert('Une erreur est survenue lors du marquage comme payée');
+    }
+  };
+
+  const handleGeneratePDF = async (factureId: string) => {
+    try {
+      // Use axios to get the PDF with responseType blob
+      const response = await axios.get(`/api/factures/${factureId}/pdf`, {
+        responseType: 'blob'
+      });
+      
+      // Create a blob URL and trigger download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `facture-${factureId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Une erreur est survenue lors de la génération du PDF');
     }
   };
 
@@ -223,6 +261,7 @@ const FacturesListPage: React.FC = () => {
                     )}
 
                     <button
+                      onClick={() => handleGeneratePDF(facture.id)}
                       className="p-1 text-green-600 hover:bg-green-100 rounded"
                       title="Télécharger PDF"
                     >
@@ -375,7 +414,10 @@ const FacturesListPage: React.FC = () => {
             </div>
 
             <div className="flex justify-end space-x-3">
-              <button className="btn-secondary">
+              <button 
+                onClick={() => handleGeneratePDF(selectedFacture.id)}
+                className="btn-secondary"
+              >
                 <Download className="w-4 h-4 mr-2" />
                 Télécharger PDF
               </button>

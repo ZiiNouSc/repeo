@@ -28,13 +28,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Vérifier le token au démarrage
+    // Check token on startup
     const savedUser = localStorage.getItem('samtech_user');
     if (savedUser) {
       try {
         setUser(JSON.parse(savedUser));
       } catch (error) {
-        console.error('Erreur lors du parsing de l\'utilisateur sauvegardé:', error);
+        console.error('Error parsing saved user:', error);
         localStorage.removeItem('samtech_user');
       }
     }
@@ -44,18 +44,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
-      // Appel à l'API backend
-      const response = await axios.post('/api/login', { email, password });
+      // Call backend API
+      const response = await axios.post('/api/auth/login', { email, password });
       
       if (response.data.success) {
         const userData = response.data.user;
         setUser(userData);
         localStorage.setItem('samtech_user', JSON.stringify(userData));
       } else {
-        throw new Error(response.data.message || 'Identifiants incorrects');
+        throw new Error(response.data.message || 'Invalid credentials');
       }
     } catch (error) {
-      console.error('Erreur de connexion:', error);
+      console.error('Login error:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -63,8 +63,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
-    // Appel à l'API backend (optionnel pour le logout)
-    axios.post('/api/logout').catch(err => console.error('Erreur lors de la déconnexion:', err));
+    // Call backend API (optional for logout)
+    axios.post('/api/auth/logout').catch(err => console.error('Error during logout:', err));
     
     setUser(null);
     localStorage.removeItem('samtech_user');

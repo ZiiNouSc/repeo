@@ -144,17 +144,17 @@ const RegisterWizard: React.FC = () => {
     
     setLoading(true);
     try {
-      // Appel à l'API d'inscription
-      const response = await axios.post('/api/register', formData);
+      // Call registration API
+      const response = await axios.post('/api/auth/register', formData);
       
       if (response.data.success) {
         navigate('/auth/pending-approval');
       } else {
-        throw new Error(response.data.message || 'Erreur lors de l\'inscription');
+        throw new Error(response.data.message || 'Error during registration');
       }
     } catch (error) {
-      console.error('Erreur lors de l\'inscription:', error);
-      alert('Une erreur est survenue lors de l\'inscription. Veuillez réessayer.');
+      console.error('Registration error:', error);
+      alert('An error occurred during registration. Please try again.');
     } finally {
       setLoading(false);
     }
