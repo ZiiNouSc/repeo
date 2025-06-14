@@ -16,6 +16,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import Badge from '../../components/ui/Badge';
 import axios from 'axios';
+import clsx from 'clsx';
 
 interface ParametresData {
   // Paramètres généraux
@@ -594,11 +595,12 @@ const ParametresPage: React.FC = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  className={clsx(
+                    'w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors',
                     activeTab === tab.id
                       ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
+                  )}
                 >
                   <Icon className="w-5 h-5 mr-3" />
                   {tab.label}
