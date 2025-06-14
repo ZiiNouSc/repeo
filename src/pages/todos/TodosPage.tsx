@@ -26,32 +26,19 @@ import Card from '../../components/ui/Card';
 import SearchFilter from '../../components/ui/SearchFilter';
 import StatCard from '../../components/ui/StatCard';
 import { useAuth } from '../../contexts/AuthContext';
-
-interface Todo {
-  id: string;
-  titre: string;
-  description: string;
-  clientId?: string;
-  clientNom?: string;
-  dateEcheance: string;
-  priorite: 'faible' | 'normale' | 'haute' | 'urgente';
-  statut: 'en_attente' | 'en_cours' | 'termine';
-  type: 'rappel' | 'tache' | 'suivi';
-  dateCreation: string;
-  assigneA?: string;
-}
+import { todosAPI } from '../../services/api';
 
 const TodosPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [todos, setTodos] = useState<Todo[]>([]);
+  const [todos, setTodos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentView, setCurrentView] = useState<'table' | 'grid' | 'list'>('table');
   const [statusFilter, setStatusFilter] = useState<string>('tous');
   const [priorityFilter, setPriorityFilter] = useState<string>('tous');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
+  const [selectedTodo, setSelectedTodo] = useState<any | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
@@ -103,69 +90,9 @@ const TodosPage: React.FC = () => {
 
   const fetchTodos = async () => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setTodos([
-        {
-          id: '1',
-          titre: 'Rappeler Martin Dubois',
-          description: 'Confirmer les dates de voyage pour le package Rome',
-          clientId: '1',
-          clientNom: 'Martin Dubois',
-          dateEcheance: '2024-01-20T10:00:00Z',
-          priorite: 'haute',
-          statut: 'en_attente',
-          type: 'rappel',
-          dateCreation: '2024-01-15T09:00:00Z',
-          assigneA: 'Sophie Martin'
-        },
-        {
-          id: '2',
-          titre: 'Finaliser devis Entreprise ABC',
-          description: 'Préparer le devis détaillé pour le séminaire de 3 jours',
-          clientId: '2',
-          clientNom: 'Entreprise ABC',
-          dateEcheance: '2024-01-18T16:00:00Z',
-          priorite: 'urgente',
-          statut: 'en_cours',
-          type: 'tache',
-          dateCreation: '2024-01-14T14:00:00Z'
-        },
-        {
-          id: '3',
-          titre: 'Suivi satisfaction client',
-          description: 'Appeler Sophie Martin pour recueillir ses impressions sur le voyage',
-          clientId: '3',
-          clientNom: 'Sophie Martin',
-          dateEcheance: '2024-01-25T14:30:00Z',
-          priorite: 'normale',
-          statut: 'termine',
-          type: 'suivi',
-          dateCreation: '2024-01-12T11:00:00Z'
-        },
-        {
-          id: '4',
-          titre: 'Mettre à jour les tarifs',
-          description: 'Actualiser les tarifs des packages pour la saison été 2024',
-          dateEcheance: '2024-01-22T09:00:00Z',
-          priorite: 'normale',
-          statut: 'en_attente',
-          type: 'tache',
-          dateCreation: '2024-01-15T16:30:00Z'
-        },
-        {
-          id: '5',
-          titre: 'Relancer paiement facture',
-          description: 'Relancer le client pour le paiement de la facture FAC-2024-003',
-          clientId: '4',
-          clientNom: 'Jean Leroy',
-          dateEcheance: '2024-01-17T11:00:00Z',
-          priorite: 'haute',
-          statut: 'en_cours',
-          type: 'rappel',
-          dateCreation: '2024-01-14T10:15:00Z'
-        }
-      ]);
+      setLoading(true);
+      const response = await todosAPI.getAll();
+      setTodos(response.data.data);
     } catch (error) {
       console.error('Erreur lors du chargement des tâches:', error);
     } finally {
@@ -177,21 +104,17 @@ const TodosPage: React.FC = () => {
     if (!formData.titre || !formData.dateEcheance) return;
 
     try {
-      const newTodo: Todo = {
-        id: Date.now().toString(),
+      const response = await todosAPI.create({
         titre: formData.titre,
         description: formData.description,
         clientId: formData.clientId || undefined,
-        clientNom: formData.clientId ? 'Client sélectionné' : undefined,
         dateEcheance: new Date(formData.dateEcheance).toISOString(),
         priorite: formData.priorite,
-        statut: 'en_attente',
         type: formData.type,
-        dateCreation: new Date().toISOString(),
         assigneA: formData.assigneA || undefined
-      };
+      });
 
-      setTodos(prev => [newTodo, ...prev]);
+      setTodos(prev => [response.data.data, ...prev]);
       setShowAddModal(false);
       resetForm();
     } catch (error) {
@@ -201,10 +124,23 @@ const TodosPage: React.FC = () => {
 
   const handleToggleStatus = async (todoId: string) => {
     try {
+      await todosAPI.toggleStatus(todoId);
+      
+      // Update local state
       setTodos(prev => prev.map(todo => {
         if (todo.id === todoId) {
-          const newStatus = todo.statut === 'termine' ? 'en_attente' : 
-                           todo.statut === 'en_attente' ? 'en_cours' : 'termine';
+          // Cycle through statuses: en_attente -> en_cours -> termine -> en_attente
+          const currentStatus = todo.statut;
+          let newStatus;
+          
+          if (currentStatus === 'en_attente') {
+            newStatus = 'en_cours';
+          } else if (currentStatus === 'en_cours') {
+            newStatus = 'termine';
+          } else {
+            newStatus = 'en_attente';
+          }
+          
           return { ...todo, statut: newStatus };
         }
         return todo;
@@ -218,6 +154,7 @@ const TodosPage: React.FC = () => {
     if (!selectedTodo) return;
 
     try {
+      await todosAPI.delete(selectedTodo.id);
       setTodos(prev => prev.filter(todo => todo.id !== selectedTodo.id));
       setShowDeleteModal(false);
       setSelectedTodo(null);
@@ -238,11 +175,11 @@ const TodosPage: React.FC = () => {
     });
   };
 
-  const openEditModal = (todo: Todo) => {
+  const openEditModal = (todo: any) => {
     setSelectedTodo(todo);
     setFormData({
       titre: todo.titre,
-      description: todo.description,
+      description: todo.description || '',
       clientId: todo.clientId || '',
       dateEcheance: new Date(todo.dateEcheance).toISOString().slice(0, 16),
       priorite: todo.priorite,
@@ -306,7 +243,7 @@ const TodosPage: React.FC = () => {
     return new Date(dateEcheance) < new Date() && todos.find(t => t.dateEcheance === dateEcheance)?.statut !== 'termine';
   };
 
-  const renderTodoCard = (todo: Todo) => (
+  const renderTodoCard = (todo: any) => (
     <Card key={todo.id} hover className="h-full">
       <div className="flex items-start space-x-3">
         <button
@@ -941,8 +878,7 @@ const TodosPage: React.FC = () => {
               onClick={() => {
                 if (!selectedTodo) return;
                 
-                const updatedTodo = {
-                  ...selectedTodo,
+                todosAPI.update(selectedTodo.id, {
                   titre: formData.titre,
                   description: formData.description,
                   clientId: formData.clientId || undefined,
@@ -950,15 +886,17 @@ const TodosPage: React.FC = () => {
                   priorite: formData.priorite,
                   type: formData.type,
                   assigneA: formData.assigneA || undefined
-                };
-                
-                setTodos(prev => prev.map(todo => 
-                  todo.id === selectedTodo.id ? updatedTodo : todo
-                ));
-                
-                setShowEditModal(false);
-                setSelectedTodo(null);
-                resetForm();
+                }).then(response => {
+                  setTodos(prev => prev.map(todo => 
+                    todo.id === selectedTodo.id ? response.data.data : todo
+                  ));
+                  
+                  setShowEditModal(false);
+                  setSelectedTodo(null);
+                  resetForm();
+                }).catch(error => {
+                  console.error('Erreur lors de la mise à jour:', error);
+                });
               }}
               disabled={!formData.titre || !formData.dateEcheance}
               className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"

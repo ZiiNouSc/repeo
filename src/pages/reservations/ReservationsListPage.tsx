@@ -28,29 +28,14 @@ import Card from '../../components/ui/Card';
 import SearchFilter from '../../components/ui/SearchFilter';
 import StatCard from '../../components/ui/StatCard';
 import EmptyState from '../../components/ui/EmptyState';
-
-interface Reservation {
-  id: string;
-  numero: string;
-  clientId: string;
-  clientNom: string;
-  type: 'vol' | 'hotel' | 'package' | 'transport';
-  destination: string;
-  dateDepart: string;
-  dateRetour: string;
-  nombrePersonnes: number;
-  montant: number;
-  statut: 'confirmee' | 'en_attente' | 'annulee' | 'terminee';
-  dateCreation: string;
-  notes?: string;
-}
+import { reservationsAPI } from '../../services/api';
 
 const ReservationsListPage: React.FC = () => {
-  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [reservations, setReservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentView, setCurrentView] = useState<'table' | 'grid' | 'list'>('table');
-  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+  const [selectedReservation, setSelectedReservation] = useState<any | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
 
@@ -92,72 +77,26 @@ const ReservationsListPage: React.FC = () => {
 
   const fetchReservations = async () => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setReservations([
-        {
-          id: '1',
-          numero: 'RES-2024-001',
-          clientId: '1',
-          clientNom: 'Martin Dubois',
-          type: 'package',
-          destination: 'Rome, Italie',
-          dateDepart: '2024-02-15',
-          dateRetour: '2024-02-18',
-          nombrePersonnes: 2,
-          montant: 1200.00,
-          statut: 'confirmee',
-          dateCreation: '2024-01-15',
-          notes: 'Voyage de noces - demande chambre avec vue'
-        },
-        {
-          id: '2',
-          numero: 'RES-2024-002',
-          clientId: '2',
-          clientNom: 'Sophie Martin',
-          type: 'vol',
-          destination: 'Madrid, Espagne',
-          dateDepart: '2024-02-20',
-          dateRetour: '2024-02-25',
-          nombrePersonnes: 1,
-          montant: 350.00,
-          statut: 'en_attente',
-          dateCreation: '2024-01-14'
-        },
-        {
-          id: '3',
-          numero: 'RES-2024-003',
-          clientId: '3',
-          clientNom: 'Entreprise ABC',
-          type: 'hotel',
-          destination: 'Londres, Royaume-Uni',
-          dateDepart: '2024-03-01',
-          dateRetour: '2024-03-05',
-          nombrePersonnes: 4,
-          montant: 2400.00,
-          statut: 'confirmee',
-          dateCreation: '2024-01-12',
-          notes: 'Séminaire entreprise - 4 chambres individuelles'
-        },
-        {
-          id: '4',
-          numero: 'RES-2024-004',
-          clientId: '4',
-          clientNom: 'Jean Leroy',
-          type: 'transport',
-          destination: 'Marseille, France',
-          dateDepart: '2024-01-25',
-          dateRetour: '2024-01-25',
-          nombrePersonnes: 3,
-          montant: 180.00,
-          statut: 'terminee',
-          dateCreation: '2024-01-10'
-        }
-      ]);
+      setLoading(true);
+      const response = await reservationsAPI.getAll();
+      setReservations(response.data.data);
     } catch (error) {
       console.error('Erreur lors du chargement des réservations:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdateStatus = async (reservationId: string, newStatus: string) => {
+    try {
+      await reservationsAPI.updateStatus(reservationId, newStatus);
+      setReservations(prev => prev.map(reservation => 
+        reservation.id === reservationId 
+          ? { ...reservation, statut: newStatus }
+          : reservation
+      ));
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du statut:', error);
     }
   };
 
@@ -222,7 +161,7 @@ const ReservationsListPage: React.FC = () => {
     }
   };
 
-  const renderReservationCard = (reservation: Reservation) => (
+  const renderReservationCard = (reservation: any) => (
     <Card key={reservation.id} hover className="h-full">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center">
@@ -666,8 +605,31 @@ const ReservationsListPage: React.FC = () => {
                 <Edit className="w-4 h-4 mr-2" />
                 Modifier
               </Link>
-              <button className="btn-primary">
-                Générer les documents
+              <button 
+                onClick={() => {
+                  if (selectedReservation.statut === 'en_attente') {
+                    handleUpdateStatus(selectedReservation.id, 'confirmee');
+                  } else if (selectedReservation.statut === 'confirmee') {
+                    handleUpdateStatus(selectedReservation.id, 'terminee');
+                  }
+                  setShowDetailModal(false);
+                }}
+                className="btn-primary"
+                disabled={selectedReservation.statut === 'terminee' || selectedReservation.statut === 'annulee'}
+              >
+                {selectedReservation.statut === 'en_attente' ? (
+                  <>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Confirmer
+                  </>
+                ) : selectedReservation.statut === 'confirmee' ? (
+                  <>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Marquer comme terminée
+                  </>
+                ) : (
+                  'Générer les documents'
+                )}
               </button>
             </div>
           </div>

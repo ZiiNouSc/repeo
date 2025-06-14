@@ -13,6 +13,7 @@ import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { Facture } from '../../types';
+import { creancesAPI } from '../../services/api';
 
 const CreancesListPage: React.FC = () => {
   const [creances, setCreances] = useState<Facture[]>([]);
@@ -21,66 +22,23 @@ const CreancesListPage: React.FC = () => {
   const [selectedCreance, setSelectedCreance] = useState<Facture | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showRelanceModal, setShowRelanceModal] = useState(false);
+  const [relanceMessage, setRelanceMessage] = useState('');
 
   useEffect(() => {
-    const fetchCreances = async () => {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Simuler des factures impayées
-        setCreances([
-          {
-            id: '1',
-            numero: 'FAC-2024-001',
-            clientId: '1',
-            client: {
-              id: '1',
-              nom: 'Dubois',
-              prenom: 'Martin',
-              email: 'martin.dubois@email.com',
-              telephone: '+33 1 23 45 67 89',
-              adresse: '123 Rue de la Paix, 75001 Paris',
-              solde: 1250.50,
-              dateCreation: '2024-01-10'
-            },
-            dateEmission: '2024-01-15',
-            dateEcheance: '2024-01-25',
-            statut: 'en_retard',
-            montantHT: 1000.00,
-            montantTTC: 1200.00,
-            articles: []
-          },
-          {
-            id: '2',
-            numero: 'FAC-2024-005',
-            clientId: '2',
-            client: {
-              id: '2',
-              nom: 'Entreprise ABC',
-              entreprise: 'ABC Solutions',
-              email: 'contact@abc-solutions.com',
-              telephone: '+33 1 98 76 54 32',
-              adresse: '456 Avenue des Affaires, 69002 Lyon',
-              solde: -450.00,
-              dateCreation: '2024-01-08'
-            },
-            dateEmission: '2024-01-05',
-            dateEcheance: '2024-01-20',
-            statut: 'en_retard',
-            montantHT: 2500.00,
-            montantTTC: 3000.00,
-            articles: []
-          }
-        ]);
-      } catch (error) {
-        console.error('Erreur lors du chargement des créances:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchCreances();
   }, []);
+
+  const fetchCreances = async () => {
+    try {
+      setLoading(true);
+      const response = await creancesAPI.getAll();
+      setCreances(response.data.data);
+    } catch (error) {
+      console.error('Erreur lors du chargement des créances:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const calculateDaysLate = (dateEcheance: string) => {
     const today = new Date();
@@ -92,8 +50,9 @@ const CreancesListPage: React.FC = () => {
 
   const handleSendReminder = async (creanceId: string) => {
     try {
-      console.log('Relance envoyée pour la créance:', creanceId);
+      await creancesAPI.sendReminder(creanceId, relanceMessage);
       setShowRelanceModal(false);
+      setRelanceMessage('');
     } catch (error) {
       console.error('Erreur lors de l\'envoi de la relance:', error);
     }
@@ -269,6 +228,14 @@ const CreancesListPage: React.FC = () => {
                       <button
                         onClick={() => {
                           setSelectedCreance(creance);
+                          setRelanceMessage(`Madame, Monsieur,
+
+Nous vous rappelons que la facture ${creance.numero} d'un montant de ${creance.montantTTC.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })} est échue depuis le ${new Date(creance.dateEcheance).toLocaleDateString('fr-FR')}.
+
+Nous vous remercions de bien vouloir procéder au règlement dans les plus brefs délais.
+
+Cordialement,
+L'équipe SamTech`);
                           setShowRelanceModal(true);
                         }}
                         className="p-1 text-orange-600 hover:bg-orange-100 rounded"
@@ -363,6 +330,14 @@ const CreancesListPage: React.FC = () => {
               <button 
                 onClick={() => {
                   setShowDetailModal(false);
+                  setRelanceMessage(`Madame, Monsieur,
+
+Nous vous rappelons que la facture ${selectedCreance.numero} d'un montant de ${selectedCreance.montantTTC.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })} est échue depuis le ${new Date(selectedCreance.dateEcheance).toLocaleDateString('fr-FR')}.
+
+Nous vous remercions de bien vouloir procéder au règlement dans les plus brefs délais.
+
+Cordialement,
+L'équipe SamTech`);
                   setShowRelanceModal(true);
                 }}
                 className="btn-secondary"
@@ -417,14 +392,8 @@ const CreancesListPage: React.FC = () => {
                 id="message"
                 rows={6}
                 className="input-field"
-                defaultValue={`Madame, Monsieur,
-
-Nous vous rappelons que la facture ${selectedCreance.numero} d'un montant de ${selectedCreance.montantTTC.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })} est échue depuis le ${new Date(selectedCreance.dateEcheance).toLocaleDateString('fr-FR')}.
-
-Nous vous remercions de bien vouloir procéder au règlement dans les plus brefs délais.
-
-Cordialement,
-L'équipe SamTech`}
+                value={relanceMessage}
+                onChange={(e) => setRelanceMessage(e.target.value)}
               />
             </div>
 

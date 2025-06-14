@@ -13,6 +13,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHeaderCell, TableCell } f
 import Badge from '../../components/ui/Badge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { Agence, Ticket as TicketType } from '../../types';
+import { dashboardAPI, agencesAPI, ticketsAPI } from '../../services/api';
 
 const SuperadminDashboard: React.FC = () => {
   const [stats, setStats] = useState({
@@ -26,74 +27,40 @@ const SuperadminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Simulation des données - à remplacer par de vrais appels API
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setStats({
-          totalAgences: 24,
-          agencesApprouvees: 18,
-          agencesEnAttente: 6,
-          ticketsOuverts: 12
-        });
-
-        // Mock des agences récentes
-        setRecentAgencies([
-          {
-            id: '1',
-            nom: 'Voyages Express',
-            email: 'contact@voyages-express.com',
-            telephone: '+33 1 23 45 67 89',
-            adresse: '123 Rue de la Paix, Paris',
-            statut: 'en_attente',
-            dateInscription: '2024-01-15',
-            modulesActifs: []
-          },
-          {
-            id: '2',
-            nom: 'Tourisme International',
-            email: 'info@tourisme-intl.com',
-            telephone: '+33 1 98 76 54 32',
-            adresse: '456 Avenue des Voyages, Lyon',
-            statut: 'approuve',
-            dateInscription: '2024-01-14',
-            modulesActifs: ['clients', 'factures', 'packages']
-          }
-        ]);
-
-        // Mock des tickets récents
-        setRecentTickets([
-          {
-            id: '1',
-            agenceId: '1',
-            agence: {
-              id: '1',
-              nom: 'Voyages Express',
-              email: 'contact@voyages-express.com',
-              telephone: '+33 1 23 45 67 89',
-              adresse: '123 Rue de la Paix, Paris',
-              statut: 'approuve',
-              dateInscription: '2024-01-15',
-              modulesActifs: []
-            },
-            sujet: 'Problème de connexion',
-            description: 'Impossible de se connecter depuis ce matin',
-            statut: 'ouvert',
-            priorite: 'haute',
-            dateCreation: '2024-01-15T10:30:00Z',
-            dateMAJ: '2024-01-15T10:30:00Z'
-          }
-        ]);
-      } catch (error) {
-        console.error('Erreur lors du chargement des données:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch dashboard stats
+      const statsResponse = await dashboardAPI.getSuperadminStats();
+      const statsData = statsResponse.data.data;
+      
+      setStats({
+        totalAgences: statsData.totalAgences,
+        agencesApprouvees: statsData.agencesApprouvees,
+        agencesEnAttente: statsData.agencesEnAttente,
+        ticketsOuverts: statsData.ticketsOuverts
+      });
+
+      // Fetch recent agencies
+      const agencesResponse = await agencesAPI.getAll();
+      const agences = agencesResponse.data.data;
+      setRecentAgencies(agences.slice(0, 5));
+
+      // Fetch recent tickets
+      const ticketsResponse = await ticketsAPI.getAll();
+      const tickets = ticketsResponse.data.data;
+      setRecentTickets(tickets.slice(0, 5));
+      
+    } catch (error) {
+      console.error('Erreur lors du chargement des données:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -208,6 +175,14 @@ const SuperadminDashboard: React.FC = () => {
                   </TableCell>
                 </TableRow>
               ))}
+              
+              {recentAgencies.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center py-4">
+                    <p className="text-gray-500">Aucune agence récente</p>
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>
@@ -251,6 +226,12 @@ const SuperadminDashboard: React.FC = () => {
                 </div>
               </div>
             ))}
+            
+            {recentTickets.length === 0 && (
+              <div className="text-center py-4">
+                <p className="text-gray-500">Aucun ticket récent</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

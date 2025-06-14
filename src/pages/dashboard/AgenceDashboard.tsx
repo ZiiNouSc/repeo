@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom';
 import { Table, TableHeader, TableBody, TableRow, TableHeaderCell, TableCell } from '../../components/ui/Table';
 import Badge from '../../components/ui/Badge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import { dashboardAPI } from '../../services/api';
 
 const AgenceDashboard: React.FC = () => {
   const [stats, setStats] = useState({
@@ -27,51 +28,31 @@ const AgenceDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setStats({
-          totalClients: 145,
-          facturesEnAttente: 8,
-          chiffreAffaireMois: 45230,
-          soldeCaisse: 12450,
-          facturesImpayees: 3,
-          bonCommandeEnCours: 12
-        });
-
-        setRecentActivities([
-          {
-            id: '1',
-            type: 'facture',
-            description: 'Facture #2024-001 créée pour Client ABC',
-            montant: 1250,
-            date: '2024-01-15T10:30:00Z'
-          },
-          {
-            id: '2',
-            type: 'paiement',
-            description: 'Paiement reçu - Facture #2024-002',
-            montant: 890,
-            date: '2024-01-15T09:15:00Z'
-          },
-          {
-            id: '3',
-            type: 'commande',
-            description: 'Bon de commande #BC-001 validé',
-            montant: 2340,
-            date: '2024-01-14T16:20:00Z'
-          }
-        ]);
-      } catch (error) {
-        console.error('Erreur lors du chargement des données:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const response = await dashboardAPI.getAgenceStats();
+      const data = response.data.data;
+      
+      setStats({
+        totalClients: data.totalClients,
+        facturesEnAttente: data.facturesEnAttente,
+        chiffreAffaireMois: data.chiffreAffaireMois,
+        soldeCaisse: data.soldeCaisse,
+        facturesImpayees: data.facturesImpayees || 0,
+        bonCommandeEnCours: data.bonCommandeEnCours || 0
+      });
+
+      setRecentActivities(data.recentActivities || []);
+    } catch (error) {
+      console.error('Erreur lors du chargement des données:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -208,6 +189,12 @@ const AgenceDashboard: React.FC = () => {
                 </div>
               </div>
             ))}
+            
+            {recentActivities.length === 0 && (
+              <div className="text-center py-4">
+                <p className="text-gray-500">Aucune activité récente</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -271,6 +258,12 @@ const AgenceDashboard: React.FC = () => {
                   <p className="text-xs text-yellow-600">À convertir en factures</p>
                 </div>
               </Link>
+            )}
+            
+            {stats.facturesImpayees === 0 && stats.bonCommandeEnCours === 0 && (
+              <div className="text-center py-4">
+                <p className="text-gray-500">Aucune alerte</p>
+              </div>
             )}
           </div>
         </div>

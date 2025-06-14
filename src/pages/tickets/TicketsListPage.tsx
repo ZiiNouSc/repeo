@@ -15,6 +15,7 @@ import Modal from '../../components/ui/Modal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { Ticket } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
+import { ticketsAPI } from '../../services/api';
 
 const TicketsListPage: React.FC = () => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -28,84 +29,24 @@ const TicketsListPage: React.FC = () => {
   const { user } = useAuth();
 
   useEffect(() => {
-    const fetchTickets = async () => {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setTickets([
-          {
-            id: '1',
-            agenceId: '1',
-            agence: {
-              id: '1',
-              nom: 'Voyages Express',
-              email: 'contact@voyages-express.com',
-              telephone: '+33 1 23 45 67 89',
-              adresse: '123 Rue de la Paix, Paris',
-              statut: 'approuve',
-              dateInscription: '2024-01-15',
-              modulesActifs: []
-            },
-            sujet: 'Problème de connexion',
-            description: 'Impossible de se connecter à la plateforme depuis ce matin. Le message d\'erreur indique "Identifiants incorrects" alors que nous utilisons les bons identifiants.',
-            statut: 'ouvert',
-            priorite: 'haute',
-            dateCreation: '2024-01-15T10:30:00Z',
-            dateMAJ: '2024-01-15T10:30:00Z'
-          },
-          {
-            id: '2',
-            agenceId: '2',
-            agence: {
-              id: '2',
-              nom: 'Tourisme International',
-              email: 'info@tourisme-intl.com',
-              telephone: '+33 1 98 76 54 32',
-              adresse: '456 Avenue des Voyages, Lyon',
-              statut: 'approuve',
-              dateInscription: '2024-01-14',
-              modulesActifs: []
-            },
-            sujet: 'Demande d\'activation module Packages',
-            description: 'Nous souhaitons activer le module Packages pour créer nos propres offres de voyage. Pouvez-vous nous l\'activer ?',
-            statut: 'en_cours',
-            priorite: 'normale',
-            dateCreation: '2024-01-14T14:20:00Z',
-            dateMAJ: '2024-01-14T15:45:00Z'
-          },
-          {
-            id: '3',
-            agenceId: '3',
-            agence: {
-              id: '3',
-              nom: 'Évasion Vacances',
-              email: 'hello@evasion-vacances.fr',
-              telephone: '+33 4 56 78 90 12',
-              adresse: '789 Boulevard du Soleil, Marseille',
-              statut: 'approuve',
-              dateInscription: '2024-01-12',
-              modulesActifs: []
-            },
-            sujet: 'Bug dans la génération de factures',
-            description: 'Lorsque nous essayons de générer une facture PDF, nous obtenons une page blanche. Le problème persiste depuis hier.',
-            statut: 'ferme',
-            priorite: 'urgente',
-            dateCreation: '2024-01-12T09:15:00Z',
-            dateMAJ: '2024-01-13T16:30:00Z'
-          }
-        ]);
-      } catch (error) {
-        console.error('Erreur lors du chargement des tickets:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchTickets();
   }, []);
 
+  const fetchTickets = async () => {
+    try {
+      setLoading(true);
+      const response = await ticketsAPI.getAll();
+      setTickets(response.data.data);
+    } catch (error) {
+      console.error('Erreur lors du chargement des tickets:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleUpdateStatus = async (ticketId: string, newStatus: string) => {
     try {
+      await ticketsAPI.updateStatus(ticketId, newStatus);
       setTickets(prev => prev.map(ticket => 
         ticket.id === ticketId 
           ? { ...ticket, statut: newStatus as any, dateMAJ: new Date().toISOString() }
@@ -120,8 +61,19 @@ const TicketsListPage: React.FC = () => {
     if (!selectedTicket || !response.trim()) return;
 
     try {
-      // Simuler l'envoi de la réponse
-      console.log('Réponse envoyée:', response);
+      // Update ticket with response
+      await ticketsAPI.update(selectedTicket.id, {
+        ...selectedTicket,
+        statut: 'en_cours'
+      });
+      
+      // Update local state
+      setTickets(prev => prev.map(ticket => 
+        ticket.id === selectedTicket.id 
+          ? { ...ticket, statut: 'en_cours', dateMAJ: new Date().toISOString() }
+          : ticket
+      ));
+      
       setResponse('');
       setShowDetailModal(false);
     } catch (error) {

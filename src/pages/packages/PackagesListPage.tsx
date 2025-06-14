@@ -15,6 +15,7 @@ import Modal from '../../components/ui/Modal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { Package } from '../../types';
 import { usePermissions } from '../../hooks/usePermissions';
+import { packagesAPI } from '../../services/api';
 
 const PackagesListPage: React.FC = () => {
   const [packages, setPackages] = useState<Package[]>([]);
@@ -26,72 +27,24 @@ const PackagesListPage: React.FC = () => {
   const { hasPermission } = usePermissions();
 
   useEffect(() => {
-    const fetchPackages = async () => {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setPackages([
-          {
-            id: '1',
-            nom: 'Séjour Paris Romantique',
-            description: 'Un week-end romantique à Paris avec hébergement 4 étoiles et dîner aux chandelles',
-            prix: 450.00,
-            duree: '3 jours / 2 nuits',
-            inclusions: [
-              'Hébergement 4 étoiles',
-              'Petit-déjeuner',
-              'Dîner romantique',
-              'Visite guidée de Montmartre',
-              'Croisière sur la Seine'
-            ],
-            visible: true,
-            dateCreation: '2024-01-15'
-          },
-          {
-            id: '2',
-            nom: 'Circuit Châteaux de la Loire',
-            description: 'Découverte des plus beaux châteaux de la Loire en 5 jours',
-            prix: 890.00,
-            duree: '5 jours / 4 nuits',
-            inclusions: [
-              'Transport en autocar',
-              'Hébergement 3 étoiles',
-              'Demi-pension',
-              'Visites guidées des châteaux',
-              'Guide accompagnateur'
-            ],
-            visible: true,
-            dateCreation: '2024-01-12'
-          },
-          {
-            id: '3',
-            nom: 'Escapade Côte d\'Azur',
-            description: 'Séjour détente sur la Côte d\'Azur avec activités nautiques',
-            prix: 650.00,
-            duree: '4 jours / 3 nuits',
-            inclusions: [
-              'Hébergement vue mer',
-              'Petit-déjeuner',
-              'Activités nautiques',
-              'Excursion à Monaco',
-              'Dégustation de vins'
-            ],
-            visible: false,
-            dateCreation: '2024-01-10'
-          }
-        ]);
-      } catch (error) {
-        console.error('Erreur lors du chargement des packages:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchPackages();
   }, []);
 
+  const fetchPackages = async () => {
+    try {
+      setLoading(true);
+      const response = await packagesAPI.getAll();
+      setPackages(response.data.data);
+    } catch (error) {
+      console.error('Erreur lors du chargement des packages:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleToggleVisibility = async (packageId: string) => {
     try {
+      await packagesAPI.toggleVisibility(packageId);
       setPackages(prev => prev.map(pkg => 
         pkg.id === packageId 
           ? { ...pkg, visible: !pkg.visible }
@@ -104,6 +57,7 @@ const PackagesListPage: React.FC = () => {
 
   const handleDelete = async (packageId: string) => {
     try {
+      await packagesAPI.delete(packageId);
       setPackages(prev => prev.filter(pkg => pkg.id !== packageId));
       setShowDeleteModal(false);
       setSelectedPackage(null);

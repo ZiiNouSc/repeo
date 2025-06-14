@@ -17,6 +17,7 @@ import Modal from '../../components/ui/Modal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { OperationCaisse } from '../../types';
 import { usePermissions } from '../../hooks/usePermissions';
+import { caisseAPI } from '../../services/api';
 
 const CaissePage: React.FC = () => {
   const [operations, setOperations] = useState<OperationCaisse[]>([]);
@@ -52,73 +53,45 @@ const CaissePage: React.FC = () => {
   ];
 
   useEffect(() => {
-    const fetchOperations = async () => {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setOperations([
-          {
-            id: '1',
-            type: 'entree',
-            montant: 1200.00,
-            description: 'Paiement facture #FAC-2024-001',
-            date: '2024-01-15T10:30:00Z',
-            categorie: 'Vente de voyage',
-            reference: 'FAC-2024-001'
-          },
-          {
-            id: '2',
-            type: 'sortie',
-            montant: 450.00,
-            description: 'Paiement fournisseur - Hôtel Partenaire',
-            date: '2024-01-14T14:20:00Z',
-            categorie: 'Frais fournisseur',
-            reference: 'FOUR-001'
-          },
-          {
-            id: '3',
-            type: 'entree',
-            montant: 890.50,
-            description: 'Commission agence - Package Rome',
-            date: '2024-01-13T09:15:00Z',
-            categorie: 'Commission',
-            reference: 'COM-2024-003'
-          },
-          {
-            id: '4',
-            type: 'sortie',
-            montant: 120.00,
-            description: 'Frais bancaires mensuels',
-            date: '2024-01-12T08:00:00Z',
-            categorie: 'Frais bancaires',
-            reference: 'BANK-2024-01'
-          }
-        ]);
-      } catch (error) {
-        console.error('Erreur lors du chargement des opérations:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchOperations();
   }, []);
+
+  const fetchOperations = async () => {
+    try {
+      setLoading(true);
+      const response = await caisseAPI.getOperations();
+      setOperations(response.data.data);
+    } catch (error) {
+      console.error('Erreur lors du chargement des opérations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSolde = async () => {
+    try {
+      const response = await caisseAPI.getSolde();
+      return response.data.data;
+    } catch (error) {
+      console.error('Erreur lors du chargement du solde:', error);
+      return { solde: 0, entrees: 0, sorties: 0 };
+    }
+  };
 
   const handleAddOperation = async () => {
     if (!formData.montant || !formData.description || !formData.categorie) return;
 
     try {
-      const newOperation: OperationCaisse = {
-        id: Date.now().toString(),
+      const response = await caisseAPI.addOperation({
         type: formData.type,
         montant: parseFloat(formData.montant),
         description: formData.description,
         categorie: formData.categorie,
         reference: formData.reference,
         date: new Date(formData.date).toISOString()
-      };
-
-      setOperations(prev => [newOperation, ...prev]);
+      });
+      
+      setOperations(prev => [response.data.data, ...prev]);
       setShowAddModal(false);
       resetForm();
     } catch (error) {
@@ -130,18 +103,17 @@ const CaissePage: React.FC = () => {
     if (!selectedOperation || !formData.montant || !formData.description || !formData.categorie) return;
 
     try {
-      const updatedOperation: OperationCaisse = {
-        ...selectedOperation,
+      const response = await caisseAPI.updateOperation(selectedOperation.id, {
         type: formData.type,
         montant: parseFloat(formData.montant),
         description: formData.description,
         categorie: formData.categorie,
         reference: formData.reference,
         date: new Date(formData.date).toISOString()
-      };
+      });
 
       setOperations(prev => prev.map(op => 
-        op.id === selectedOperation.id ? updatedOperation : op
+        op.id === selectedOperation.id ? response.data.data : op
       ));
       setShowEditModal(false);
       setSelectedOperation(null);
@@ -155,6 +127,7 @@ const CaissePage: React.FC = () => {
     if (!selectedOperation) return;
 
     try {
+      await caisseAPI.deleteOperation(selectedOperation.id);
       setOperations(prev => prev.filter(op => op.id !== selectedOperation.id));
       setShowDeleteModal(false);
       setSelectedOperation(null);

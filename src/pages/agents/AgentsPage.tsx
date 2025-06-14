@@ -25,6 +25,7 @@ import Card from '../../components/ui/Card';
 import SearchFilter from '../../components/ui/SearchFilter';
 import StatCard from '../../components/ui/StatCard';
 import { Agent, Permission } from '../../types';
+import { agentsAPI } from '../../services/api';
 
 const AgentsPage: React.FC = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -81,52 +82,9 @@ const AgentsPage: React.FC = () => {
 
   const fetchAgents = async () => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setAgents([
-        {
-          id: '1',
-          nom: 'Martin',
-          prenom: 'Sophie',
-          email: 'sophie.martin@agence.com',
-          telephone: '+33 1 23 45 67 89',
-          permissions: [
-            { module: 'clients', actions: ['lire', 'creer', 'modifier'] },
-            { module: 'factures', actions: ['lire', 'creer'] },
-            { module: 'packages', actions: ['lire'] }
-          ],
-          statut: 'actif',
-          dateCreation: '2024-01-10'
-        },
-        {
-          id: '2',
-          nom: 'Dubois',
-          prenom: 'Jean',
-          email: 'jean.dubois@agence.com',
-          telephone: '+33 1 98 76 54 32',
-          permissions: [
-            { module: 'clients', actions: ['lire'] },
-            { module: 'factures', actions: ['lire'] },
-            { module: 'bons-commande', actions: ['lire', 'creer'] }
-          ],
-          statut: 'actif',
-          dateCreation: '2024-01-08'
-        },
-        {
-          id: '3',
-          nom: 'Leroy',
-          prenom: 'Marie',
-          email: 'marie.leroy@agence.com',
-          telephone: '+33 4 56 78 90 12',
-          permissions: [
-            { module: 'caisse', actions: ['lire', 'creer', 'modifier'] },
-            { module: 'factures', actions: ['lire', 'creer', 'modifier'] },
-            { module: 'clients', actions: ['lire', 'creer'] }
-          ],
-          statut: 'suspendu',
-          dateCreation: '2024-01-05'
-        }
-      ]);
+      setLoading(true);
+      const response = await agentsAPI.getAll();
+      setAgents(response.data.data);
     } catch (error) {
       console.error('Erreur lors du chargement des agents:', error);
     } finally {
@@ -138,18 +96,8 @@ const AgentsPage: React.FC = () => {
     if (!formData.nom || !formData.prenom || !formData.email) return;
 
     try {
-      const newAgent: Agent = {
-        id: Date.now().toString(),
-        nom: formData.nom,
-        prenom: formData.prenom,
-        email: formData.email,
-        telephone: formData.telephone,
-        permissions: formData.permissions,
-        statut: 'actif',
-        dateCreation: new Date().toISOString()
-      };
-
-      setAgents(prev => [newAgent, ...prev]);
+      const response = await agentsAPI.create(formData);
+      setAgents(prev => [response.data.data, ...prev]);
       setShowAddModal(false);
       resetForm();
     } catch (error) {
@@ -159,9 +107,15 @@ const AgentsPage: React.FC = () => {
 
   const handleToggleStatus = async (agentId: string) => {
     try {
+      const agent = agents.find(a => a.id === agentId);
+      if (!agent) return;
+      
+      const newStatus = agent.statut === 'actif' ? 'suspendu' : 'actif';
+      await agentsAPI.update(agentId, { ...agent, statut: newStatus });
+      
       setAgents(prev => prev.map(agent => 
         agent.id === agentId 
-          ? { ...agent, statut: agent.statut === 'actif' ? 'suspendu' : 'actif' }
+          ? { ...agent, statut: newStatus as 'actif' | 'suspendu' }
           : agent
       ));
     } catch (error) {
@@ -173,6 +127,8 @@ const AgentsPage: React.FC = () => {
     if (!selectedAgent) return;
 
     try {
+      await agentsAPI.updatePermissions(selectedAgent.id, formData.permissions);
+      
       setAgents(prev => prev.map(agent => 
         agent.id === selectedAgent.id 
           ? { ...agent, permissions: formData.permissions }
@@ -190,6 +146,7 @@ const AgentsPage: React.FC = () => {
     if (!selectedAgent) return;
 
     try {
+      await agentsAPI.delete(selectedAgent.id);
       setAgents(prev => prev.filter(agent => agent.id !== selectedAgent.id));
       setShowDeleteModal(false);
       setSelectedAgent(null);

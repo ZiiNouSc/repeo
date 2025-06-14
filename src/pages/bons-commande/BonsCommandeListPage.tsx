@@ -17,6 +17,7 @@ import Modal from '../../components/ui/Modal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { BonCommande } from '../../types';
 import { usePermissions } from '../../hooks/usePermissions';
+import { bonCommandeAPI } from '../../services/api';
 
 const BonsCommandeListPage: React.FC = () => {
   const [bonsCommande, setBonsCommande] = useState<BonCommande[]>([]);
@@ -28,114 +29,29 @@ const BonsCommandeListPage: React.FC = () => {
   const { hasPermission } = usePermissions();
 
   useEffect(() => {
-    const fetchBonsCommande = async () => {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setBonsCommande([
-          {
-            id: '1',
-            numero: 'BC-2024-001',
-            clientId: '1',
-            client: {
-              id: '1',
-              nom: 'Dubois',
-              prenom: 'Martin',
-              email: 'martin.dubois@email.com',
-              telephone: '+33 1 23 45 67 89',
-              adresse: '123 Rue de la Paix, 75001 Paris',
-              solde: 1250.50,
-              dateCreation: '2024-01-10'
-            },
-            dateCreation: '2024-01-15',
-            statut: 'envoye',
-            montantHT: 1000.00,
-            montantTTC: 1200.00,
-            articles: [
-              {
-                id: '1',
-                designation: 'Package Voyage Paris-Rome',
-                quantite: 1,
-                prixUnitaire: 1000.00,
-                montant: 1000.00
-              }
-            ]
-          },
-          {
-            id: '2',
-            numero: 'BC-2024-002',
-            clientId: '2',
-            client: {
-              id: '2',
-              nom: 'Entreprise ABC',
-              entreprise: 'ABC Solutions',
-              email: 'contact@abc-solutions.com',
-              telephone: '+33 1 98 76 54 32',
-              adresse: '456 Avenue des Affaires, 69002 Lyon',
-              solde: -450.00,
-              dateCreation: '2024-01-08'
-            },
-            dateCreation: '2024-01-12',
-            statut: 'accepte',
-            montantHT: 2500.00,
-            montantTTC: 3000.00,
-            articles: [
-              {
-                id: '1',
-                designation: 'Séminaire entreprise - 3 jours',
-                quantite: 1,
-                prixUnitaire: 2500.00,
-                montant: 2500.00
-              }
-            ]
-          },
-          {
-            id: '3',
-            numero: 'BC-2024-003',
-            clientId: '3',
-            client: {
-              id: '3',
-              nom: 'Martin',
-              prenom: 'Sophie',
-              email: 'sophie.martin@email.com',
-              telephone: '+33 4 56 78 90 12',
-              adresse: '789 Boulevard du Commerce, 13001 Marseille',
-              solde: 0,
-              dateCreation: '2024-01-05'
-            },
-            dateCreation: '2024-01-10',
-            statut: 'brouillon',
-            montantHT: 750.00,
-            montantTTC: 900.00,
-            articles: [
-              {
-                id: '1',
-                designation: 'Billet avion Marseille-Madrid',
-                quantite: 2,
-                prixUnitaire: 375.00,
-                montant: 750.00
-              }
-            ]
-          }
-        ]);
-      } catch (error) {
-        console.error('Erreur lors du chargement des bons de commande:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchBonsCommande();
   }, []);
 
+  const fetchBonsCommande = async () => {
+    try {
+      setLoading(true);
+      const response = await bonCommandeAPI.getAll();
+      setBonsCommande(response.data.data);
+    } catch (error) {
+      console.error('Erreur lors du chargement des bons de commande:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleConvertToInvoice = async (bonId: string) => {
     try {
+      await bonCommandeAPI.convertToInvoice(bonId);
       setBonsCommande(prev => prev.map(bon => 
         bon.id === bonId 
           ? { ...bon, statut: 'facture' as const }
           : bon
       ));
-      console.log('Bon de commande converti en facture');
     } catch (error) {
       console.error('Erreur lors de la conversion:', error);
     }

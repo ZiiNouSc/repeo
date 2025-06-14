@@ -3,6 +3,7 @@ import { Users, Receipt, Calendar, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { usePermissions } from '../../hooks/usePermissions';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import { dashboardAPI } from '../../services/api';
 
 const AgentDashboard: React.FC = () => {
   const { hasPermission, getAccessibleModules } = usePermissions();
@@ -17,45 +18,40 @@ const AgentDashboard: React.FC = () => {
   const accessibleModules = getAccessibleModules();
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setStats({
-          clientsTraites: 12,
-          facturesCreees: 8,
-          operationsSemaine: 15
-        });
-
-        setRecentTasks([
-          {
-            id: '1',
-            type: 'client',
-            description: 'Mise à jour fiche client - Martin Dubois',
-            date: '2024-01-15T14:30:00Z'
-          },
-          {
-            id: '2',
-            type: 'facture',
-            description: 'Facture #2024-015 créée',
-            date: '2024-01-15T11:20:00Z'
-          },
-          {
-            id: '3',
-            type: 'commande',
-            description: 'Bon de commande #BC-045 traité',
-            date: '2024-01-14T16:45:00Z'
-          }
-        ]);
-      } catch (error) {
-        console.error('Erreur lors du chargement des données:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch agent dashboard data
+      const response = await dashboardAPI.getStats();
+      const data = response.data.data;
+      
+      // Extract relevant stats for agent
+      setStats({
+        clientsTraites: data.clientsTraites || 0,
+        facturesCreees: data.facturesCreees || 0,
+        operationsSemaine: data.operationsSemaine || 0
+      });
+
+      // Get recent activities/tasks
+      setRecentTasks(data.recentActivities?.slice(0, 3) || []);
+      
+    } catch (error) {
+      console.error('Erreur lors du chargement des données:', error);
+      // Set default values in case of error
+      setStats({
+        clientsTraites: 0,
+        facturesCreees: 0,
+        operationsSemaine: 0
+      });
+      setRecentTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -177,6 +173,12 @@ const AgentDashboard: React.FC = () => {
                 </div>
               </div>
             ))}
+            
+            {recentTasks.length === 0 && (
+              <div className="text-center py-4">
+                <p className="text-gray-500">Aucune activité récente</p>
+              </div>
+            )}
           </div>
         </div>
 

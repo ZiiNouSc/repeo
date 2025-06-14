@@ -18,6 +18,7 @@ import Modal from '../../components/ui/Modal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { Facture } from '../../types';
 import { usePermissions } from '../../hooks/usePermissions';
+import { facturesAPI } from '../../services/api';
 
 const FacturesListPage: React.FC = () => {
   const [factures, setFactures] = useState<Facture[]>([]);
@@ -29,111 +30,24 @@ const FacturesListPage: React.FC = () => {
   const { hasPermission } = usePermissions();
 
   useEffect(() => {
-    const fetchFactures = async () => {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setFactures([
-          {
-            id: '1',
-            numero: 'FAC-2024-001',
-            clientId: '1',
-            client: {
-              id: '1',
-              nom: 'Dubois',
-              prenom: 'Martin',
-              email: 'martin.dubois@email.com',
-              telephone: '+33 1 23 45 67 89',
-              adresse: '123 Rue de la Paix, 75001 Paris',
-              solde: 1250.50,
-              dateCreation: '2024-01-10'
-            },
-            dateEmission: '2024-01-15',
-            dateEcheance: '2024-02-15',
-            statut: 'envoyee',
-            montantHT: 1000.00,
-            montantTTC: 1200.00,
-            articles: [
-              {
-                id: '1',
-                designation: 'Package Voyage Paris-Rome',
-                quantite: 1,
-                prixUnitaire: 1000.00,
-                montant: 1000.00
-              }
-            ]
-          },
-          {
-            id: '2',
-            numero: 'FAC-2024-002',
-            clientId: '2',
-            client: {
-              id: '2',
-              nom: 'Entreprise ABC',
-              entreprise: 'ABC Solutions',
-              email: 'contact@abc-solutions.com',
-              telephone: '+33 1 98 76 54 32',
-              adresse: '456 Avenue des Affaires, 69002 Lyon',
-              solde: -450.00,
-              dateCreation: '2024-01-08'
-            },
-            dateEmission: '2024-01-10',
-            dateEcheance: '2024-01-25',
-            statut: 'en_retard',
-            montantHT: 2500.00,
-            montantTTC: 3000.00,
-            articles: [
-              {
-                id: '1',
-                designation: 'Séminaire entreprise - 3 jours',
-                quantite: 1,
-                prixUnitaire: 2500.00,
-                montant: 2500.00
-              }
-            ]
-          },
-          {
-            id: '3',
-            numero: 'FAC-2024-003',
-            clientId: '3',
-            client: {
-              id: '3',
-              nom: 'Martin',
-              prenom: 'Sophie',
-              email: 'sophie.martin@email.com',
-              telephone: '+33 4 56 78 90 12',
-              adresse: '789 Boulevard du Commerce, 13001 Marseille',
-              solde: 0,
-              dateCreation: '2024-01-05'
-            },
-            dateEmission: '2024-01-12',
-            dateEcheance: '2024-02-12',
-            statut: 'payee',
-            montantHT: 750.00,
-            montantTTC: 900.00,
-            articles: [
-              {
-                id: '1',
-                designation: 'Billet avion Marseille-Madrid',
-                quantite: 2,
-                prixUnitaire: 375.00,
-                montant: 750.00
-              }
-            ]
-          }
-        ]);
-      } catch (error) {
-        console.error('Erreur lors du chargement des factures:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchFactures();
   }, []);
 
+  const fetchFactures = async () => {
+    try {
+      setLoading(true);
+      const response = await facturesAPI.getAll();
+      setFactures(response.data.data);
+    } catch (error) {
+      console.error('Erreur lors du chargement des factures:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleMarkAsPaid = async (factureId: string) => {
     try {
+      await facturesAPI.markAsPaid(factureId);
       setFactures(prev => prev.map(facture => 
         facture.id === factureId 
           ? { ...facture, statut: 'payee' as const }

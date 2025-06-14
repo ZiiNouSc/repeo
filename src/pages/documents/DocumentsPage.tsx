@@ -24,27 +24,14 @@ import GridView from '../../components/ui/GridView';
 import Card from '../../components/ui/Card';
 import SearchFilter from '../../components/ui/SearchFilter';
 import StatCard from '../../components/ui/StatCard';
-
-interface Document {
-  id: string;
-  nom: string;
-  type: 'pdf' | 'doc' | 'excel' | 'image' | 'autre';
-  taille: number; // en bytes
-  clientId?: string;
-  clientNom?: string;
-  categorie: 'contrat' | 'facture' | 'devis' | 'photo' | 'passeport' | 'autre';
-  dateCreation: string;
-  dateModification: string;
-  url: string;
-  description?: string;
-}
+import { documentsAPI } from '../../services/api';
 
 const DocumentsPage: React.FC = () => {
-  const [documents, setDocuments] = useState<Document[]>([]);
+  const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentView, setCurrentView] = useState<'table' | 'grid' | 'list'>('grid');
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<any | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
@@ -81,76 +68,34 @@ const DocumentsPage: React.FC = () => {
 
   const fetchDocuments = async () => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setDocuments([
-        {
-          id: '1',
-          nom: 'Contrat_Voyage_Rome_Martin_Dubois.pdf',
-          type: 'pdf',
-          taille: 245760, // 240 KB
-          clientId: '1',
-          clientNom: 'Martin Dubois',
-          categorie: 'contrat',
-          dateCreation: '2024-01-15T10:30:00Z',
-          dateModification: '2024-01-15T10:30:00Z',
-          url: '/documents/contrat_voyage_rome.pdf',
-          description: 'Contrat pour le voyage à Rome du 15-18 février 2024'
-        },
-        {
-          id: '2',
-          nom: 'Facture_FAC-2024-001.pdf',
-          type: 'pdf',
-          taille: 156432,
-          clientId: '1',
-          clientNom: 'Martin Dubois',
-          categorie: 'facture',
-          dateCreation: '2024-01-15T14:20:00Z',
-          dateModification: '2024-01-15T14:20:00Z',
-          url: '/documents/facture_001.pdf'
-        },
-        {
-          id: '3',
-          nom: 'Passeport_Sophie_Martin.jpg',
-          type: 'image',
-          taille: 1024000, // 1 MB
-          clientId: '2',
-          clientNom: 'Sophie Martin',
-          categorie: 'passeport',
-          dateCreation: '2024-01-14T16:45:00Z',
-          dateModification: '2024-01-14T16:45:00Z',
-          url: '/documents/passeport_sophie.jpg',
-          description: 'Copie du passeport pour le voyage d\'affaires'
-        },
-        {
-          id: '4',
-          nom: 'Devis_Seminaire_Londres.xlsx',
-          type: 'excel',
-          taille: 89456,
-          clientId: '3',
-          clientNom: 'Entreprise ABC',
-          categorie: 'devis',
-          dateCreation: '2024-01-12T11:15:00Z',
-          dateModification: '2024-01-14T09:30:00Z',
-          url: '/documents/devis_seminaire.xlsx',
-          description: 'Devis détaillé pour le séminaire à Londres'
-        },
-        {
-          id: '5',
-          nom: 'Photos_Hotel_Rome.zip',
-          type: 'autre',
-          taille: 5242880, // 5 MB
-          categorie: 'photo',
-          dateCreation: '2024-01-10T08:00:00Z',
-          dateModification: '2024-01-10T08:00:00Z',
-          url: '/documents/photos_hotel_rome.zip',
-          description: 'Photos de l\'hôtel partenaire à Rome'
-        }
-      ]);
+      setLoading(true);
+      const response = await documentsAPI.getAll();
+      setDocuments(response.data.data);
     } catch (error) {
       console.error('Erreur lors du chargement des documents:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUploadDocument = async (formData: any) => {
+    try {
+      const response = await documentsAPI.create(formData);
+      setDocuments(prev => [response.data.data, ...prev]);
+      setShowUploadModal(false);
+    } catch (error) {
+      console.error('Erreur lors du téléchargement:', error);
+    }
+  };
+
+  const handleDeleteDocument = async (documentId: string) => {
+    try {
+      await documentsAPI.delete(documentId);
+      setDocuments(prev => prev.filter(doc => doc.id !== documentId));
+      setShowDetailModal(false);
+      setSelectedDocument(null);
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
     }
   };
 
@@ -216,7 +161,7 @@ const DocumentsPage: React.FC = () => {
     }
   };
 
-  const renderDocumentCard = (document: Document) => (
+  const renderDocumentCard = (document: any) => (
     <Card key={document.id} hover className="h-full">
       <div className="text-center mb-4">
         <div className="w-16 h-16 mx-auto mb-3 flex items-center justify-center bg-gray-50 rounded-lg">
@@ -265,6 +210,7 @@ const DocumentsPage: React.FC = () => {
           <Download className="w-4 h-4" />
         </button>
         <button
+          onClick={() => handleDeleteDocument(document.id)}
           className="p-1 text-red-600 hover:bg-red-100 rounded"
           title="Supprimer"
         >
@@ -434,6 +380,7 @@ const DocumentsPage: React.FC = () => {
                         <Download className="w-4 h-4" />
                       </button>
                       <button
+                        onClick={() => handleDeleteDocument(document.id)}
                         className="p-1 text-red-600 hover:bg-red-100 rounded"
                         title="Supprimer"
                       >
@@ -620,7 +567,24 @@ const DocumentsPage: React.FC = () => {
             >
               Annuler
             </button>
-            <button className="btn-primary">
+            <button 
+              onClick={() => {
+                // Simulate upload
+                const mockDocument = {
+                  nom: "Document_Test.pdf",
+                  type: "pdf",
+                  taille: 245760,
+                  categorie: "autre",
+                  dateCreation: new Date().toISOString(),
+                  dateModification: new Date().toISOString(),
+                  url: "/documents/document_test.pdf",
+                  description: "Document de test"
+                };
+                
+                handleUploadDocument(mockDocument);
+              }}
+              className="btn-primary"
+            >
               Télécharger
             </button>
           </div>

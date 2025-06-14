@@ -14,6 +14,7 @@ import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { Agence } from '../../types';
+import { agencesAPI } from '../../services/api';
 
 const AgencesListPage: React.FC = () => {
   const [agences, setAgences] = useState<Agence[]>([]);
@@ -36,56 +37,24 @@ const AgencesListPage: React.FC = () => {
   ];
 
   useEffect(() => {
-    const fetchAgences = async () => {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Mock data
-        setAgences([
-          {
-            id: '1',
-            nom: 'Voyages Express',
-            email: 'contact@voyages-express.com',
-            telephone: '+33 1 23 45 67 89',
-            adresse: '123 Rue de la Paix, 75001 Paris',
-            statut: 'en_attente',
-            dateInscription: '2024-01-15',
-            modulesActifs: []
-          },
-          {
-            id: '2',
-            nom: 'Tourisme International',
-            email: 'info@tourisme-intl.com',
-            telephone: '+33 1 98 76 54 32',
-            adresse: '456 Avenue des Voyages, 69002 Lyon',
-            statut: 'approuve',
-            dateInscription: '2024-01-10',
-            modulesActifs: ['clients', 'factures', 'packages', 'billets']
-          },
-          {
-            id: '3',
-            nom: 'Évasion Vacances',
-            email: 'hello@evasion-vacances.fr',
-            telephone: '+33 4 56 78 90 12',
-            adresse: '789 Boulevard du Soleil, 13001 Marseille',
-            statut: 'suspendu',
-            dateInscription: '2024-01-05',
-            modulesActifs: ['clients', 'factures']
-          }
-        ]);
-      } catch (error) {
-        console.error('Erreur lors du chargement des agences:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchAgences();
   }, []);
 
+  const fetchAgences = async () => {
+    try {
+      setLoading(true);
+      const response = await agencesAPI.getAll();
+      setAgences(response.data.data);
+    } catch (error) {
+      console.error('Erreur lors du chargement des agences:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleApprove = async (agenceId: string) => {
     try {
-      // Appel API pour approuver l'agence
+      await agencesAPI.approve(agenceId);
       setAgences(prev => prev.map(agence => 
         agence.id === agenceId 
           ? { ...agence, statut: 'approuve' as const }
@@ -98,7 +67,7 @@ const AgencesListPage: React.FC = () => {
 
   const handleReject = async (agenceId: string) => {
     try {
-      // Appel API pour rejeter l'agence
+      await agencesAPI.reject(agenceId);
       setAgences(prev => prev.map(agence => 
         agence.id === agenceId 
           ? { ...agence, statut: 'rejete' as const }
@@ -111,7 +80,7 @@ const AgencesListPage: React.FC = () => {
 
   const handleSuspend = async (agenceId: string) => {
     try {
-      // Appel API pour suspendre l'agence
+      await agencesAPI.suspend(agenceId);
       setAgences(prev => prev.map(agence => 
         agence.id === agenceId 
           ? { ...agence, statut: 'suspendu' as const }
@@ -124,7 +93,7 @@ const AgencesListPage: React.FC = () => {
 
   const handleUpdateModules = async (agenceId: string, modules: string[]) => {
     try {
-      // Appel API pour mettre à jour les modules
+      await agencesAPI.updateModules(agenceId, modules);
       setAgences(prev => prev.map(agence => 
         agence.id === agenceId 
           ? { ...agence, modulesActifs: modules }

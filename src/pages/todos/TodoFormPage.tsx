@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Save, ArrowLeft, Calendar, User, Bell, CheckSquare } from 'lucide-react';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { useAuth } from '../../contexts/AuthContext';
+import { todosAPI, clientsAPI } from '../../services/api';
 
 interface TodoFormData {
   titre: string;
@@ -55,12 +56,8 @@ const TodoFormPage: React.FC = () => {
 
   const fetchClients = async () => {
     try {
-      // Mock data - à remplacer par un vrai appel API
-      setClients([
-        { id: '1', nom: 'Dubois', prenom: 'Martin', entreprise: '' },
-        { id: '2', nom: 'Entreprise ABC', prenom: '', entreprise: 'ABC Solutions' },
-        { id: '3', nom: 'Martin', prenom: 'Sophie', entreprise: '' }
-      ]);
+      const response = await clientsAPI.getAll();
+      setClients(response.data.data);
     } catch (error) {
       console.error('Erreur lors du chargement des clients:', error);
     }
@@ -68,7 +65,8 @@ const TodoFormPage: React.FC = () => {
 
   const fetchAgents = async () => {
     try {
-      // Mock data - à remplacer par un vrai appel API
+      // In a real app, this would be an API call to get agents
+      // For now, we'll use mock data
       setAgents([
         { id: '1', nom: 'Martin', prenom: 'Sophie' },
         { id: '2', nom: 'Dubois', prenom: 'Jean' },
@@ -82,18 +80,18 @@ const TodoFormPage: React.FC = () => {
   const fetchTodo = async () => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const response = await todosAPI.getById(id!);
+      const todo = response.data.data;
       
-      // Mock data pour l'édition
       setFormData({
-        titre: 'Rappeler Martin Dubois',
-        description: 'Confirmer les dates de voyage pour le package Rome',
-        clientId: '1',
-        clientNom: 'Martin Dubois',
-        dateEcheance: '2024-01-20T10:00',
-        priorite: 'haute',
-        type: 'rappel',
-        assigneA: 'Sophie Martin',
+        titre: todo.titre,
+        description: todo.description || '',
+        clientId: todo.clientId || '',
+        clientNom: todo.clientNom || '',
+        dateEcheance: new Date(todo.dateEcheance).toISOString().slice(0, 16),
+        priorite: todo.priorite,
+        type: todo.type,
+        assigneA: todo.assigneA || '',
         notificationEmail: true,
         notificationSMS: false,
         recurrence: 'aucune'
@@ -110,9 +108,27 @@ const TodoFormPage: React.FC = () => {
     setSaving(true);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log('Tâche sauvegardée:', formData);
+      if (isEditing && id) {
+        await todosAPI.update(id, {
+          titre: formData.titre,
+          description: formData.description,
+          clientId: formData.clientId || undefined,
+          dateEcheance: new Date(formData.dateEcheance).toISOString(),
+          priorite: formData.priorite,
+          type: formData.type,
+          assigneA: formData.assigneA || undefined
+        });
+      } else {
+        await todosAPI.create({
+          titre: formData.titre,
+          description: formData.description,
+          clientId: formData.clientId || undefined,
+          dateEcheance: new Date(formData.dateEcheance).toISOString(),
+          priorite: formData.priorite,
+          type: formData.type,
+          assigneA: formData.assigneA || undefined
+        });
+      }
       navigate('/todos');
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
@@ -132,6 +148,12 @@ const TodoFormPage: React.FC = () => {
         ...prev,
         clientId,
         clientNom: client.entreprise || `${client.prenom} ${client.nom}`
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        clientId: '',
+        clientNom: ''
       }));
     }
   };
@@ -213,15 +235,12 @@ const TodoFormPage: React.FC = () => {
                   className="input-field"
                 >
                   <option value="tache">
-                    <CheckSquare className="w-4 h-4 mr-2" />
                     Tâche
                   </option>
                   <option value="rappel">
-                    <Bell className="w-4 h-4 mr-2" />
                     Rappel
                   </option>
                   <option value="suivi">
-                    <User className="w-4 h-4 mr-2" />
                     Suivi client
                   </option>
                 </select>

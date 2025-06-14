@@ -16,6 +16,7 @@ import Modal from '../../components/ui/Modal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { BilletAvion } from '../../types';
 import { usePermissions } from '../../hooks/usePermissions';
+import { billetsAPI } from '../../services/api';
 
 const BilletsListPage: React.FC = () => {
   const [billets, setBillets] = useState<BilletAvion[]>([]);
@@ -27,69 +28,30 @@ const BilletsListPage: React.FC = () => {
   const { hasPermission } = usePermissions();
 
   useEffect(() => {
-    const fetchBillets = async () => {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setBillets([
-          {
-            id: '1',
-            numeroVol: 'AF1234',
-            compagnie: 'Air France',
-            dateDepart: '2024-02-15T08:30:00Z',
-            dateArrivee: '2024-02-15T10:45:00Z',
-            origine: 'Paris (CDG)',
-            destination: 'Rome (FCO)',
-            passager: 'Martin Dubois',
-            prix: 245.00,
-            statut: 'confirme'
-          },
-          {
-            id: '2',
-            numeroVol: 'LH5678',
-            compagnie: 'Lufthansa',
-            dateDepart: '2024-02-20T14:15:00Z',
-            dateArrivee: '2024-02-20T17:30:00Z',
-            origine: 'Lyon (LYS)',
-            destination: 'Munich (MUC)',
-            passager: 'Sophie Martin',
-            prix: 189.50,
-            statut: 'confirme'
-          },
-          {
-            id: '3',
-            numeroVol: 'IB9012',
-            compagnie: 'Iberia',
-            dateDepart: '2024-02-25T11:00:00Z',
-            dateArrivee: '2024-02-25T12:30:00Z',
-            origine: 'Marseille (MRS)',
-            destination: 'Madrid (MAD)',
-            passager: 'Jean Dupont',
-            prix: 156.75,
-            statut: 'en_attente'
-          },
-          {
-            id: '4',
-            numeroVol: 'BA3456',
-            compagnie: 'British Airways',
-            dateDepart: '2024-01-30T16:45:00Z',
-            dateArrivee: '2024-01-30T17:15:00Z',
-            origine: 'Paris (CDG)',
-            destination: 'Londres (LHR)',
-            passager: 'Marie Leroy',
-            prix: 198.00,
-            statut: 'annule'
-          }
-        ]);
-      } catch (error) {
-        console.error('Erreur lors du chargement des billets:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchBillets();
   }, []);
+
+  const fetchBillets = async () => {
+    try {
+      setLoading(true);
+      const response = await billetsAPI.getAll();
+      setBillets(response.data.data);
+    } catch (error) {
+      console.error('Erreur lors du chargement des billets:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImportFromGmail = async () => {
+    try {
+      await billetsAPI.importFromGmail();
+      // Refresh the list after import
+      fetchBillets();
+    } catch (error) {
+      console.error('Erreur lors de l\'import depuis Gmail:', error);
+    }
+  };
 
   const filteredBillets = billets.filter(billet => {
     const matchesSearch = billet.numeroVol.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -128,7 +90,10 @@ const BilletsListPage: React.FC = () => {
           <p className="text-gray-600">Gérer les réservations de billets d'avion</p>
         </div>
         <div className="flex space-x-3">
-          <button className="btn-secondary">
+          <button 
+            onClick={handleImportFromGmail}
+            className="btn-secondary"
+          >
             <Download className="w-4 h-4 mr-2" />
             Importer Gmail
           </button>
