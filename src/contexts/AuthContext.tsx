@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import axios from 'axios';
 import { User } from '../types';
 
 interface AuthContextType {
@@ -27,7 +28,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simuler la vérification du token au démarrage
+    // Vérifier le token au démarrage
     const savedUser = localStorage.getItem('samtech_user');
     if (savedUser) {
       try {
@@ -43,56 +44,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
-      // Simulation d'une connexion - à remplacer par un vrai appel API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Appel à l'API backend
+      const response = await axios.post('/api/login', { email, password });
       
-      // Mock des utilisateurs pour démonstration
-      let mockUser: User;
-      
-      if (email === 'superadmin@samtech.com') {
-        mockUser = {
-          id: '1',
-          email: 'superadmin@samtech.com',
-          nom: 'Admin',
-          prenom: 'Super',
-          role: 'superadmin',
-          statut: 'actif'
-        };
-      } else if (email === 'agence@test.com') {
-        mockUser = {
-          id: '2',
-          email: 'agence@test.com',
-          nom: 'Test',
-          prenom: 'Agence',
-          role: 'agence',
-          agenceId: 'agence-1',
-          statut: 'actif'
-        };
-      } else if (email === 'agent@test.com') {
-        mockUser = {
-          id: '3',
-          email: 'agent@test.com',
-          nom: 'Test',
-          prenom: 'Agent',
-          role: 'agent',
-          agenceId: 'agence-1',
-          statut: 'actif',
-          permissions: [
-            { module: 'clients', actions: ['lire', 'creer', 'modifier'] },
-            { module: 'factures', actions: ['lire', 'creer'] },
-            { module: 'reservations', actions: ['lire', 'creer'] },
-            { module: 'todos', actions: ['lire', 'creer', 'modifier'] },
-            { module: 'documents', actions: ['lire', 'creer'] },
-            { module: 'calendrier', actions: ['lire', 'creer'] }
-          ]
-        };
+      if (response.data.success) {
+        const userData = response.data.user;
+        setUser(userData);
+        localStorage.setItem('samtech_user', JSON.stringify(userData));
       } else {
-        throw new Error('Identifiants incorrects');
+        throw new Error(response.data.message || 'Identifiants incorrects');
       }
-
-      setUser(mockUser);
-      localStorage.setItem('samtech_user', JSON.stringify(mockUser));
     } catch (error) {
+      console.error('Erreur de connexion:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -100,6 +63,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
+    // Appel à l'API backend (optionnel pour le logout)
+    axios.post('/api/logout').catch(err => console.error('Erreur lors de la déconnexion:', err));
+    
     setUser(null);
     localStorage.removeItem('samtech_user');
   };

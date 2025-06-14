@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { 
   Building2, 
   MapPin, 
@@ -25,6 +26,7 @@ interface RegistrationData {
   pays: string;
   telephone: string;
   email: string;
+  password: string;
   siteWeb: string;
   
   // Étape 3: Infos facturation
@@ -55,6 +57,7 @@ const RegisterWizard: React.FC = () => {
     pays: 'France',
     telephone: '',
     email: '',
+    password: '',
     siteWeb: '',
     raisonSociale: '',
     numeroTVA: '',
@@ -112,7 +115,7 @@ const RegisterWizard: React.FC = () => {
         return !!(formData.nomAgence && formData.typeActivite && formData.siret);
       case 2:
         return !!(formData.adresse && formData.ville && formData.codePostal && 
-                 formData.telephone && formData.email);
+                 formData.telephone && formData.email && formData.password);
       case 3:
         return !!(formData.raisonSociale && formData.numeroTVA);
       case 4:
@@ -141,13 +144,17 @@ const RegisterWizard: React.FC = () => {
     
     setLoading(true);
     try {
-      // Simulation d'envoi des données
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Appel à l'API d'inscription
+      const response = await axios.post('/api/register', formData);
       
-      console.log('Données d\'inscription:', formData);
-      navigate('/auth/pending-approval');
+      if (response.data.success) {
+        navigate('/auth/pending-approval');
+      } else {
+        throw new Error(response.data.message || 'Erreur lors de l\'inscription');
+      }
     } catch (error) {
       console.error('Erreur lors de l\'inscription:', error);
+      alert('Une erreur est survenue lors de l\'inscription. Veuillez réessayer.');
     } finally {
       setLoading(false);
     }
@@ -294,6 +301,19 @@ const RegisterWizard: React.FC = () => {
                   placeholder="contact@votre-agence.com"
                 />
               </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Mot de passe *
+              </label>
+              <input
+                type="password"
+                className="input-field"
+                value={formData.password}
+                onChange={(e) => handleInputChange('password', e.target.value)}
+                placeholder="Choisissez un mot de passe sécurisé"
+              />
             </div>
             
             <div>

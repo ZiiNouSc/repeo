@@ -24,8 +24,8 @@ const LoginPage: React.FC = () => {
     try {
       await login(email, password);
       navigate('/dashboard');
-    } catch (err) {
-      setError('Identifiants incorrects');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Identifiants incorrects');
     }
   };
 
