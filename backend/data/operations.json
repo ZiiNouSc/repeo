@@ -1,0 +1,38 @@
+[
+  {
+    "id": "1",
+    "type": "entree",
+    "montant": 1200.00,
+    "description": "Paiement facture #FAC-2024-001",
+    "date": "2024-01-15T10:30:00.000Z",
+    "categorie": "Vente de voyage",
+    "reference": "FAC-2024-001"
+  },
+  {
+    "id": "2",
+    "type": "sortie",
+    "montant": 450.00,
+    "description": "Paiement fournisseur - Hôtel Partenaire",
+    "date": "2024-01-14T14:20:00.000Z",
+    "categorie": "Frais fournisseur",
+    "reference": "FOUR-001"
+  },
+  {
+    "id": "3",
+    "type": "entree",
+    "montant": 890.50,
+    "description": "Commission agence - Package Rome",
+    "date": "2024-01-13T09:15:00.000Z",
+    "categorie": "Commission",
+    "reference": "COM-2024-003"
+  },
+  {
+    "id": "4",
+    "type": "sortie",
+    "montant": 120.00,
+    "description": "Frais bancaires mensuels",
+    "date": "2024-01-12T08:00:00.000Z",
+    "categorie": "Frais bancaires",
+    "reference": "BANK-2024-01"
+  }
+]

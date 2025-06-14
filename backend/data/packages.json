@@ -1,0 +1,50 @@
+[
+  {
+    "id": "1",
+    "nom": "Séjour Paris Romantique",
+    "description": "Un week-end romantique à Paris avec hébergement 4 étoiles et dîner aux chandelles",
+    "prix": 450.00,
+    "duree": "3 jours / 2 nuits",
+    "inclusions": [
+      "Hébergement 4 étoiles",
+      "Petit-déjeuner",
+      "Dîner romantique",
+      "Visite guidée de Montmartre",
+      "Croisière sur la Seine"
+    ],
+    "visible": true,
+    "dateCreation": "2024-01-15T00:00:00.000Z"
+  },
+  {
+    "id": "2",
+    "nom": "Circuit Châteaux de la Loire",
+    "description": "Découverte des plus beaux châteaux de la Loire en 5 jours",
+    "prix": 890.00,
+    "duree": "5 jours / 4 nuits",
+    "inclusions": [
+      "Transport en autocar",
+      "Hébergement 3 étoiles",
+      "Demi-pension",
+      "Visites guidées des châteaux",
+      "Guide accompagnateur"
+    ],
+    "visible": true,
+    "dateCreation": "2024-01-12T00:00:00.000Z"
+  },
+  {
+    "id": "3",
+    "nom": "Escapade Côte d'Azur",
+    "description": "Séjour détente sur la Côte d'Azur avec activités nautiques",
+    "prix": 650.00,
+    "duree": "4 jours / 3 nuits",
+    "inclusions": [
+      "Hébergement vue mer",
+      "Petit-déjeuner",
+      "Activités nautiques",
+      "Excursion à Monaco",
+      "Dégustation de vins"
+    ],
+    "visible": false,
+    "dateCreation": "2024-01-10T00:00:00.000Z"
+  }
+]

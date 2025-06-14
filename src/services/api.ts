@@ -16,6 +16,14 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// API Auth
+export const authAPI = {
+  login: (email: string, password: string) => api.post('/login', { email, password }),
+  register: (data: any) => api.post('/register', data),
+  logout: () => api.post('/logout'),
+  getCurrentUser: () => api.get('/me'),
+};
+
 // API Agences
 export const agencesAPI = {
   getAll: () => api.get('/agences'),
@@ -117,11 +125,49 @@ export const ticketsAPI = {
     api.put(`/tickets/${id}/status`, { status }),
 };
 
+// API Todos
+export const todosAPI = {
+  getAll: () => api.get('/todos'),
+  getById: (id: string) => api.get(`/todos/${id}`),
+  create: (data: any) => api.post('/todos', data),
+  update: (id: string, data: any) => api.put(`/todos/${id}`, data),
+  toggleStatus: (id: string) => api.put(`/todos/${id}/toggle`),
+  delete: (id: string) => api.delete(`/todos/${id}`),
+};
+
+// API Documents
+export const documentsAPI = {
+  getAll: () => api.get('/documents'),
+  getById: (id: string) => api.get(`/documents/${id}`),
+  create: (data: any) => api.post('/documents', data),
+  update: (id: string, data: any) => api.put(`/documents/${id}`, data),
+  delete: (id: string) => api.delete(`/documents/${id}`),
+};
+
 // API Dashboard
 export const dashboardAPI = {
   getStats: () => api.get('/dashboard/stats'),
   getSuperadminStats: () => api.get('/dashboard/superadmin/stats'),
   getAgenceStats: () => api.get('/dashboard/agence/stats'),
+};
+
+// API Creances
+export const creancesAPI = {
+  getAll: () => api.get('/creances'),
+  getStats: () => api.get('/creances/stats'),
+  sendReminder: (id: string, message: string) => 
+    api.post(`/creances/${id}/reminder`, { message }),
+};
+
+// API Reservations
+export const reservationsAPI = {
+  getAll: () => api.get('/reservations'),
+  getById: (id: string) => api.get(`/reservations/${id}`),
+  create: (data: any) => api.post('/reservations', data),
+  update: (id: string, data: any) => api.put(`/reservations/${id}`, data),
+  updateStatus: (id: string, status: string) => 
+    api.put(`/reservations/${id}/status`, { status }),
+  delete: (id: string) => api.delete(`/reservations/${id}`),
 };
 
 export default api;

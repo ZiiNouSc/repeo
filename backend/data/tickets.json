@@ -1,0 +1,32 @@
+[
+  {
+    "id": "1",
+    "agenceId": "1",
+    "sujet": "Problème de connexion",
+    "description": "Impossible de se connecter à la plateforme depuis ce matin. Le message d'erreur indique \"Identifiants incorrects\" alors que nous utilisons les bons identifiants.",
+    "statut": "ouvert",
+    "priorite": "haute",
+    "dateCreation": "2024-01-15T10:30:00.000Z",
+    "dateMAJ": "2024-01-15T10:30:00.000Z"
+  },
+  {
+    "id": "2",
+    "agenceId": "2",
+    "sujet": "Demande d'activation module Packages",
+    "description": "Nous souhaitons activer le module Packages pour créer nos propres offres de voyage. Pouvez-vous nous l'activer ?",
+    "statut": "en_cours",
+    "priorite": "normale",
+    "dateCreation": "2024-01-14T14:20:00.000Z",
+    "dateMAJ": "2024-01-14T15:45:00.000Z"
+  },
+  {
+    "id": "3",
+    "agenceId": "3",
+    "sujet": "Bug dans la génération de factures",
+    "description": "Lorsque nous essayons de générer une facture PDF, nous obtenons une page blanche. Le problème persiste depuis hier.",
+    "statut": "ferme",
+    "priorite": "urgente",
+    "dateCreation": "2024-01-12T09:15:00.000Z",
+    "dateMAJ": "2024-01-13T16:30:00.000Z"
+  }
+]

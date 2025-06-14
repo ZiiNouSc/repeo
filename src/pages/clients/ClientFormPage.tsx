@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Save, ArrowLeft } from 'lucide-react';
 import { Client } from '../../types';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import { clientsAPI } from '../../services/api';
 
 const ClientFormPage: React.FC = () => {
   const navigate = useNavigate();
@@ -25,17 +26,16 @@ const ClientFormPage: React.FC = () => {
       const fetchClient = async () => {
         setLoading(true);
         try {
-          // Simulation - remplacer par un vrai appel API
-          await new Promise(resolve => setTimeout(resolve, 500));
+          const response = await clientsAPI.getById(id);
+          const client = response.data.data;
           
-          // Mock data pour l'édition
           setFormData({
-            nom: 'Dubois',
-            prenom: 'Martin',
-            entreprise: '',
-            email: 'martin.dubois@email.com',
-            telephone: '+33 1 23 45 67 89',
-            adresse: '123 Rue de la Paix, 75001 Paris'
+            nom: client.nom,
+            prenom: client.prenom || '',
+            entreprise: client.entreprise || '',
+            email: client.email,
+            telephone: client.telephone,
+            adresse: client.adresse
           });
         } catch (error) {
           console.error('Erreur lors du chargement du client:', error);
@@ -53,10 +53,11 @@ const ClientFormPage: React.FC = () => {
     setSaving(true);
 
     try {
-      // Simulation de sauvegarde
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log('Client sauvegardé:', formData);
+      if (isEditing && id) {
+        await clientsAPI.update(id, formData);
+      } else {
+        await clientsAPI.create(formData);
+      }
       navigate('/clients');
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
@@ -230,7 +231,7 @@ const ClientFormPage: React.FC = () => {
             className="btn-primary flex items-center"
           >
             {saving ? (
-              <LoadingSpinner size="sm\" className="mr-2" />
+              <LoadingSpinner size="sm" className="mr-2" />
             ) : (
               <Save className="w-4 h-4 mr-2" />
             )}

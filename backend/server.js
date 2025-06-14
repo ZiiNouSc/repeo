@@ -1,8 +1,25 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const authRoutes = require('./routes/auth');
 const path = require('path');
+
+// Import routes
+const authRoutes = require('./routes/auth');
+const clientsRoutes = require('./routes/clients');
+const fournisseursRoutes = require('./routes/fournisseurs');
+const facturesRoutes = require('./routes/factures');
+const bonsCommandeRoutes = require('./routes/bonsCommande');
+const caisseRoutes = require('./routes/caisse');
+const packagesRoutes = require('./routes/packages');
+const billetsRoutes = require('./routes/billets');
+const agencesRoutes = require('./routes/agences');
+const agentsRoutes = require('./routes/agents');
+const ticketsRoutes = require('./routes/tickets');
+const todosRoutes = require('./routes/todos');
+const documentsRoutes = require('./routes/documents');
+const dashboardRoutes = require('./routes/dashboard');
+const creancesRoutes = require('./routes/creances');
+const reservationsRoutes = require('./routes/reservations');
 
 // Initialize express app
 const app = express();
@@ -15,6 +32,21 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api', authRoutes);
+app.use('/api/clients', clientsRoutes);
+app.use('/api/fournisseurs', fournisseursRoutes);
+app.use('/api/factures', facturesRoutes);
+app.use('/api/bons-commande', bonsCommandeRoutes);
+app.use('/api/caisse', caisseRoutes);
+app.use('/api/packages', packagesRoutes);
+app.use('/api/billets', billetsRoutes);
+app.use('/api/agences', agencesRoutes);
+app.use('/api/agents', agentsRoutes);
+app.use('/api/tickets', ticketsRoutes);
+app.use('/api/todos', todosRoutes);
+app.use('/api/documents', documentsRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/creances', creancesRoutes);
+app.use('/api/reservations', reservationsRoutes);
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {

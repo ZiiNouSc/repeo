@@ -1,0 +1,50 @@
+[
+  {
+    "id": "1",
+    "numeroVol": "AF1234",
+    "compagnie": "Air France",
+    "dateDepart": "2024-02-15T08:30:00.000Z",
+    "dateArrivee": "2024-02-15T10:45:00.000Z",
+    "origine": "Paris (CDG)",
+    "destination": "Rome (FCO)",
+    "passager": "Martin Dubois",
+    "prix": 245.00,
+    "statut": "confirme"
+  },
+  {
+    "id": "2",
+    "numeroVol": "LH5678",
+    "compagnie": "Lufthansa",
+    "dateDepart": "2024-02-20T14:15:00.000Z",
+    "dateArrivee": "2024-02-20T17:30:00.000Z",
+    "origine": "Lyon (LYS)",
+    "destination": "Munich (MUC)",
+    "passager": "Sophie Martin",
+    "prix": 189.50,
+    "statut": "confirme"
+  },
+  {
+    "id": "3",
+    "numeroVol": "IB9012",
+    "compagnie": "Iberia",
+    "dateDepart": "2024-02-25T11:00:00.000Z",
+    "dateArrivee": "2024-02-25T12:30:00.000Z",
+    "origine": "Marseille (MRS)",
+    "destination": "Madrid (MAD)",
+    "passager": "Jean Dupont",
+    "prix": 156.75,
+    "statut": "en_attente"
+  },
+  {
+    "id": "4",
+    "numeroVol": "BA3456",
+    "compagnie": "British Airways",
+    "dateDepart": "2024-01-30T16:45:00.000Z",
+    "dateArrivee": "2024-01-30T17:15:00.000Z",
+    "origine": "Paris (CDG)",
+    "destination": "Londres (LHR)",
+    "passager": "Marie Leroy",
+    "prix": 198.00,
+    "statut": "annule"
+  }
+]

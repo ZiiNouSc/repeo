@@ -1,0 +1,52 @@
+[
+  {
+    "id": "1",
+    "nom": "Dubois",
+    "prenom": "Martin",
+    "email": "martin.dubois@email.com",
+    "telephone": "+33 1 23 45 67 89",
+    "adresse": "123 Rue de la Paix, 75001 Paris",
+    "solde": 1250.50,
+    "dateCreation": "2024-01-10T00:00:00.000Z"
+  },
+  {
+    "id": "2",
+    "nom": "Entreprise ABC",
+    "entreprise": "ABC Solutions",
+    "email": "contact@abc-solutions.com",
+    "telephone": "+33 1 98 76 54 32",
+    "adresse": "456 Avenue des Affaires, 69002 Lyon",
+    "solde": -450.00,
+    "dateCreation": "2024-01-08T00:00:00.000Z"
+  },
+  {
+    "id": "3",
+    "nom": "Martin",
+    "prenom": "Sophie",
+    "email": "sophie.martin@email.com",
+    "telephone": "+33 4 56 78 90 12",
+    "adresse": "789 Boulevard du Commerce, 13001 Marseille",
+    "solde": 0,
+    "dateCreation": "2024-01-05T00:00:00.000Z"
+  },
+  {
+    "id": "4",
+    "nom": "Leroy",
+    "prenom": "Jean",
+    "email": "jean.leroy@email.com",
+    "telephone": "+33 2 34 56 78 90",
+    "adresse": "321 Rue du Voyage, 44000 Nantes",
+    "solde": 2100.75,
+    "dateCreation": "2024-01-03T00:00:00.000Z"
+  },
+  {
+    "id": "5",
+    "nom": "TechCorp",
+    "entreprise": "TechCorp Industries",
+    "email": "contact@techcorp.com",
+    "telephone": "+33 3 45 67 89 01",
+    "adresse": "654 Avenue Innovation, 67000 Strasbourg",
+    "solde": -1200.00,
+    "dateCreation": "2024-01-01T00:00:00.000Z"
+  }
+]

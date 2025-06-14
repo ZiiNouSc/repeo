@@ -29,6 +29,7 @@ import StatCard from '../../components/ui/StatCard';
 import EmptyState from '../../components/ui/EmptyState';
 import { Client } from '../../types';
 import { usePermissions } from '../../hooks/usePermissions';
+import { clientsAPI } from '../../services/api';
 
 const ClientsListPageEnhanced: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
@@ -77,60 +78,9 @@ const ClientsListPageEnhanced: React.FC = () => {
 
   const fetchClients = async () => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setClients([
-        {
-          id: '1',
-          nom: 'Dubois',
-          prenom: 'Martin',
-          email: 'martin.dubois@email.com',
-          telephone: '+33 1 23 45 67 89',
-          adresse: '123 Rue de la Paix, 75001 Paris',
-          solde: 1250.50,
-          dateCreation: '2024-01-10'
-        },
-        {
-          id: '2',
-          nom: 'Entreprise ABC',
-          entreprise: 'ABC Solutions',
-          email: 'contact@abc-solutions.com',
-          telephone: '+33 1 98 76 54 32',
-          adresse: '456 Avenue des Affaires, 69002 Lyon',
-          solde: -450.00,
-          dateCreation: '2024-01-08'
-        },
-        {
-          id: '3',
-          nom: 'Martin',
-          prenom: 'Sophie',
-          email: 'sophie.martin@email.com',
-          telephone: '+33 4 56 78 90 12',
-          adresse: '789 Boulevard du Commerce, 13001 Marseille',
-          solde: 0,
-          dateCreation: '2024-01-05'
-        },
-        {
-          id: '4',
-          nom: 'Leroy',
-          prenom: 'Jean',
-          email: 'jean.leroy@email.com',
-          telephone: '+33 2 34 56 78 90',
-          adresse: '321 Rue du Voyage, 44000 Nantes',
-          solde: 2100.75,
-          dateCreation: '2024-01-03'
-        },
-        {
-          id: '5',
-          nom: 'TechCorp',
-          entreprise: 'TechCorp Industries',
-          email: 'contact@techcorp.com',
-          telephone: '+33 3 45 67 89 01',
-          adresse: '654 Avenue Innovation, 67000 Strasbourg',
-          solde: -1200.00,
-          dateCreation: '2024-01-01'
-        }
-      ]);
+      setLoading(true);
+      const response = await clientsAPI.getAll();
+      setClients(response.data.data);
     } catch (error) {
       console.error('Erreur lors du chargement des clients:', error);
     } finally {
@@ -140,6 +90,7 @@ const ClientsListPageEnhanced: React.FC = () => {
 
   const handleDelete = async (clientId: string) => {
     try {
+      await clientsAPI.delete(clientId);
       setClients(prev => prev.filter(client => client.id !== clientId));
       setShowDeleteModal(false);
       setSelectedClient(null);
@@ -248,8 +199,8 @@ const ClientsListPageEnhanced: React.FC = () => {
       </div>
 
       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-        <div className="flex items-center text-xs text-gray-500">
-          <Calendar className="w-3 h-3 mr-1" />
+        <div className="text-xs text-gray-500">
+          <Calendar className="w-3 h-3 mr-1 inline" />
           {new Date(client.dateCreation).toLocaleDateString('fr-FR')}
         </div>
         <div className="flex items-center space-x-2">

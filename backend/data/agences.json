@@ -1,0 +1,32 @@
+[
+  {
+    "id": "1",
+    "nom": "Voyages Express",
+    "email": "contact@voyages-express.com",
+    "telephone": "+33 1 23 45 67 89",
+    "adresse": "123 Rue de la Paix, 75001 Paris",
+    "statut": "en_attente",
+    "dateInscription": "2024-01-15T00:00:00.000Z",
+    "modulesActifs": []
+  },
+  {
+    "id": "2",
+    "nom": "Tourisme International",
+    "email": "info@tourisme-intl.com",
+    "telephone": "+33 1 98 76 54 32",
+    "adresse": "456 Avenue des Voyages, 69002 Lyon",
+    "statut": "approuve",
+    "dateInscription": "2024-01-10T00:00:00.000Z",
+    "modulesActifs": ["clients", "factures", "packages", "billets"]
+  },
+  {
+    "id": "3",
+    "nom": "Évasion Vacances",
+    "email": "hello@evasion-vacances.fr",
+    "telephone": "+33 4 56 78 90 12",
+    "adresse": "789 Boulevard du Soleil, 13001 Marseille",
+    "statut": "suspendu",
+    "dateInscription": "2024-01-05T00:00:00.000Z",
+    "modulesActifs": ["clients", "factures"]
+  }
+]

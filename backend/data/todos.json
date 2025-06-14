@@ -1,0 +1,61 @@
+[
+  {
+    "id": "1",
+    "titre": "Rappeler Martin Dubois",
+    "description": "Confirmer les dates de voyage pour le package Rome",
+    "clientId": "1",
+    "clientNom": "Martin Dubois",
+    "dateEcheance": "2024-01-20T10:00:00.000Z",
+    "priorite": "haute",
+    "statut": "en_attente",
+    "type": "rappel",
+    "dateCreation": "2024-01-15T09:00:00.000Z",
+    "assigneA": "Sophie Martin"
+  },
+  {
+    "id": "2",
+    "titre": "Finaliser devis Entreprise ABC",
+    "description": "Préparer le devis détaillé pour le séminaire de 3 jours",
+    "clientId": "2",
+    "clientNom": "Entreprise ABC",
+    "dateEcheance": "2024-01-18T16:00:00.000Z",
+    "priorite": "urgente",
+    "statut": "en_cours",
+    "type": "tache",
+    "dateCreation": "2024-01-14T14:00:00.000Z"
+  },
+  {
+    "id": "3",
+    "titre": "Suivi satisfaction client",
+    "description": "Appeler Sophie Martin pour recueillir ses impressions sur le voyage",
+    "clientId": "3",
+    "clientNom": "Sophie Martin",
+    "dateEcheance": "2024-01-25T14:30:00.000Z",
+    "priorite": "normale",
+    "statut": "termine",
+    "type": "suivi",
+    "dateCreation": "2024-01-12T11:00:00.000Z"
+  },
+  {
+    "id": "4",
+    "titre": "Mettre à jour les tarifs",
+    "description": "Actualiser les tarifs des packages pour la saison été 2024",
+    "dateEcheance": "2024-01-22T09:00:00.000Z",
+    "priorite": "normale",
+    "statut": "en_attente",
+    "type": "tache",
+    "dateCreation": "2024-01-15T16:30:00.000Z"
+  },
+  {
+    "id": "5",
+    "titre": "Relancer paiement facture",
+    "description": "Relancer le client pour le paiement de la facture FAC-2024-003",
+    "clientId": "4",
+    "clientNom": "Jean Leroy",
+    "dateEcheance": "2024-01-17T11:00:00.000Z",
+    "priorite": "haute",
+    "statut": "en_cours",
+    "type": "rappel",
+    "dateCreation": "2024-01-14T10:15:00.000Z"
+  }
+]

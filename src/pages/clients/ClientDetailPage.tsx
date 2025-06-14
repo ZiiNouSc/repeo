@@ -16,6 +16,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHeaderCell, TableCell } f
 import Badge from '../../components/ui/Badge';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { Client, Facture, BonCommande } from '../../types';
+import { clientsAPI, facturesAPI, bonCommandeAPI } from '../../services/api';
 
 const ClientDetailPage: React.FC = () => {
   const { id } = useParams();
@@ -34,60 +35,26 @@ const ClientDetailPage: React.FC = () => {
 
   const fetchClientData = async () => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      setLoading(true);
       
-      // Mock data - à remplacer par de vrais appels API
-      setClient({
-        id: id!,
-        nom: 'Dubois',
-        prenom: 'Martin',
-        email: 'martin.dubois@email.com',
-        telephone: '+33 1 23 45 67 89',
-        adresse: '123 Rue de la Paix, 75001 Paris',
-        solde: 1250.50,
-        dateCreation: '2024-01-10'
-      });
-
-      setFactures([
-        {
-          id: '1',
-          numero: 'FAC-2024-001',
-          clientId: id!,
-          client: {} as Client,
-          dateEmission: '2024-01-15',
-          dateEcheance: '2024-02-15',
-          statut: 'envoyee',
-          montantHT: 1000.00,
-          montantTTC: 1200.00,
-          articles: []
-        },
-        {
-          id: '2',
-          numero: 'FAC-2024-005',
-          clientId: id!,
-          client: {} as Client,
-          dateEmission: '2024-01-10',
-          dateEcheance: '2024-02-10',
-          statut: 'payee',
-          montantHT: 750.00,
-          montantTTC: 900.00,
-          articles: []
-        }
-      ]);
-
-      setBonsCommande([
-        {
-          id: '1',
-          numero: 'BC-2024-001',
-          clientId: id!,
-          client: {} as Client,
-          dateCreation: '2024-01-12',
-          statut: 'accepte',
-          montantHT: 500.00,
-          montantTTC: 600.00,
-          articles: []
-        }
-      ]);
+      // Fetch client data
+      const clientResponse = await clientsAPI.getById(id!);
+      setClient(clientResponse.data.data);
+      
+      // Fetch factures
+      const facturesResponse = await facturesAPI.getAll();
+      const clientFactures = facturesResponse.data.data.filter(
+        (facture: Facture) => facture.clientId === id
+      );
+      setFactures(clientFactures);
+      
+      // Fetch bons de commande
+      const bonsCommandeResponse = await bonCommandeAPI.getAll();
+      const clientBonsCommande = bonsCommandeResponse.data.data.filter(
+        (bon: BonCommande) => bon.clientId === id
+      );
+      setBonsCommande(clientBonsCommande);
+      
     } catch (error) {
       console.error('Erreur lors du chargement des données client:', error);
     } finally {

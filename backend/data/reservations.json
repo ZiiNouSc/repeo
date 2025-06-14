@@ -1,0 +1,60 @@
+[
+  {
+    "id": "1",
+    "numero": "RES-2024-001",
+    "clientId": "1",
+    "clientNom": "Martin Dubois",
+    "type": "package",
+    "destination": "Rome, Italie",
+    "dateDepart": "2024-02-15T00:00:00.000Z",
+    "dateRetour": "2024-02-18T00:00:00.000Z",
+    "nombrePersonnes": 2,
+    "montant": 1200.00,
+    "statut": "confirmee",
+    "dateCreation": "2024-01-15T00:00:00.000Z",
+    "notes": "Voyage de noces - demande chambre avec vue"
+  },
+  {
+    "id": "2",
+    "numero": "RES-2024-002",
+    "clientId": "2",
+    "clientNom": "Sophie Martin",
+    "type": "vol",
+    "destination": "Madrid, Espagne",
+    "dateDepart": "2024-02-20T00:00:00.000Z",
+    "dateRetour": "2024-02-25T00:00:00.000Z",
+    "nombrePersonnes": 1,
+    "montant": 350.00,
+    "statut": "en_attente",
+    "dateCreation": "2024-01-14T00:00:00.000Z"
+  },
+  {
+    "id": "3",
+    "numero": "RES-2024-003",
+    "clientId": "3",
+    "clientNom": "Entreprise ABC",
+    "type": "hotel",
+    "destination": "Londres, Royaume-Uni",
+    "dateDepart": "2024-03-01T00:00:00.000Z",
+    "dateRetour": "2024-03-05T00:00:00.000Z",
+    "nombrePersonnes": 4,
+    "montant": 2400.00,
+    "statut": "confirmee",
+    "dateCreation": "2024-01-12T00:00:00.000Z",
+    "notes": "Séminaire entreprise - 4 chambres individuelles"
+  },
+  {
+    "id": "4",
+    "numero": "RES-2024-004",
+    "clientId": "4",
+    "clientNom": "Jean Leroy",
+    "type": "transport",
+    "destination": "Marseille, France",
+    "dateDepart": "2024-01-25T00:00:00.000Z",
+    "dateRetour": "2024-01-25T00:00:00.000Z",
+    "nombrePersonnes": 3,
+    "montant": 180.00,
+    "statut": "terminee",
+    "dateCreation": "2024-01-10T00:00:00.000Z"
+  }
+]
