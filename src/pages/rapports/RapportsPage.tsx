@@ -10,7 +10,10 @@ import {
   Users,
   Euro,
   Plane,
-  Building2
+  Building2,
+  Package,
+  Car,
+  Eye
 } from 'lucide-react';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import Card from '../../components/ui/Card';
