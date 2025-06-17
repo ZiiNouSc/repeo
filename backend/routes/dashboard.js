@@ -107,10 +107,17 @@ router.get('/superadmin/stats', (req, res) => {
       .sort((a, b) => new Date(b.dateInscription) - new Date(a.dateInscription))
       .slice(0, 5);
     
-    // Recent tickets
+    // Recent tickets with agency data attached
     const recentTickets = tickets
       .sort((a, b) => new Date(b.dateCreation) - new Date(a.dateCreation))
-      .slice(0, 5);
+      .slice(0, 5)
+      .map(ticket => {
+        const agence = agences.find(a => a.id === ticket.agenceId);
+        return {
+          ...ticket,
+          agence: agence || null
+        };
+      });
     
     res.status(200).json({
       success: true,
