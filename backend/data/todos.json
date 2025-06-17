@@ -20,7 +20,7 @@
     "clientNom": "Entreprise ABC",
     "dateEcheance": "2024-01-18T16:00:00.000Z",
     "priorite": "urgente",
-    "statut": "en_cours",
+    "statut": "termine",
     "type": "tache",
     "dateCreation": "2024-01-14T14:00:00.000Z"
   },
