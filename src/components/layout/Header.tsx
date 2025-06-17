@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, Search, LogOut, User, Settings, Menu, Mail, Phone, ChevronDown } from 'lucide-react';
+import { Bell, Search, LogOut, User, Settings, Menu, Mail, Phone, ChevronDown, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -8,12 +8,14 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, switchAgence, currentAgence } = useAuth();
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showAgencesMenu, setShowAgencesMenu] = useState(false);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const agencesMenuRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = () => {
     logout();
@@ -30,6 +32,11 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
     navigate('/parametres');
   };
 
+  const handleSwitchAgence = (agenceId: string) => {
+    switchAgence(agenceId);
+    setShowAgencesMenu(false);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
@@ -37,6 +44,9 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
       }
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setShowUserMenu(false);
+      }
+      if (agencesMenuRef.current && !agencesMenuRef.current.contains(event.target as Node)) {
+        setShowAgencesMenu(false);
       }
     };
 
@@ -72,6 +82,13 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
 
   const unreadCount = notifications.filter(n => n.unread).length;
 
+  // Mock list of user's agencies - in a real app, this would come from the auth context
+  const userAgences = user?.role === 'agence' ? [
+    { id: '1', nom: 'Voyages Express' },
+    { id: '2', nom: 'Tourisme International' },
+    { id: '3', nom: 'Évasion Vacances' }
+  ] : [];
+
   return (
     <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 px-6 py-4 sticky top-0 z-40">
       <div className="flex items-center justify-between">
@@ -93,6 +110,47 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
               className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 hover:bg-white transition-colors"
             />
           </div>
+
+          {/* Agency Selector - Only show for agency admins */}
+          {user?.role === 'agence' && userAgences.length > 1 && (
+            <div className="relative ml-4" ref={agencesMenuRef}>
+              <button 
+                onClick={() => setShowAgencesMenu(!showAgencesMenu)}
+                className="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded-xl transition-colors"
+              >
+                <Building2 className="w-5 h-5 text-gray-600" />
+                <span className="text-sm font-medium text-gray-700 hidden md:block">
+                  {currentAgence?.nom || userAgences[0].nom}
+                </span>
+                <ChevronDown className="w-4 h-4 text-gray-500" />
+              </button>
+
+              {/* Dropdown menu agences */}
+              {showAgencesMenu && (
+                <div className="absolute left-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-200 py-2 z-50 animate-slide-up">
+                  <div className="px-4 py-2 border-b border-gray-100">
+                    <p className="font-medium text-gray-900">Changer d'agence</p>
+                  </div>
+                  <div className="py-2">
+                    {userAgences.map(agence => (
+                      <button 
+                        key={agence.id}
+                        onClick={() => handleSwitchAgence(agence.id)}
+                        className={`w-full flex items-center px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
+                          (currentAgence?.id || userAgences[0].id) === agence.id 
+                            ? 'text-blue-600 font-medium' 
+                            : 'text-gray-700'
+                        }`}
+                      >
+                        <Building2 className="w-4 h-4 mr-3" />
+                        {agence.nom}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center space-x-4">

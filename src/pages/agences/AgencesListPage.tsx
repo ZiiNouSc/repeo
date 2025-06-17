@@ -26,14 +26,21 @@ const AgencesListPage: React.FC = () => {
   const [showModulesModal, setShowModulesModal] = useState(false);
 
   const availableModules = [
-    { id: 'clients', name: 'Clients', description: 'Gestion des clients' },
-    { id: 'fournisseurs', name: 'Fournisseurs', description: 'Gestion des fournisseurs' },
-    { id: 'factures', name: 'Factures', description: 'Facturation' },
-    { id: 'bons-commande', name: 'Bons de commande', description: 'Gestion des commandes' },
-    { id: 'caisse', name: 'Caisse', description: 'Gestion de caisse' },
-    { id: 'packages', name: 'Packages', description: 'Création de packages' },
-    { id: 'billets', name: 'Billets d\'avion', description: 'Gestion des billets' },
-    { id: 'vitrine', name: 'Vitrine', description: 'Vitrine publique' }
+    { id: 'clients', name: 'Clients', description: 'Gestion des clients', essential: true },
+    { id: 'fournisseurs', name: 'Fournisseurs', description: 'Gestion des fournisseurs', essential: true },
+    { id: 'factures', name: 'Factures', description: 'Facturation', essential: true },
+    { id: 'bons-commande', name: 'Bons de commande', description: 'Gestion des commandes', essential: false },
+    { id: 'caisse', name: 'Caisse', description: 'Gestion de caisse', essential: true },
+    { id: 'creances', name: 'Créances', description: 'Suivi des impayés', essential: false },
+    { id: 'packages', name: 'Packages', description: 'Création de packages', essential: false },
+    { id: 'billets', name: 'Billets d\'avion', description: 'Gestion des billets', essential: false },
+    { id: 'vitrine', name: 'Vitrine', description: 'Vitrine publique', essential: false },
+    { id: 'situation', name: 'Situation', description: 'Tableaux de bord', essential: false },
+    { id: 'documents', name: 'Documents', description: 'Gestion des documents', essential: false },
+    { id: 'todos', name: 'Tâches', description: 'Gestion des tâches', essential: false },
+    { id: 'calendrier', name: 'Calendrier', description: 'Gestion du calendrier', essential: false },
+    { id: 'crm', name: 'CRM', description: 'Gestion des contacts', essential: false },
+    { id: 'reservations', name: 'Réservations', description: 'Gestion des réservations', essential: false }
   ];
 
   useEffect(() => {
@@ -328,6 +335,26 @@ const AgencesListPage: React.FC = () => {
               <p className="text-sm text-gray-900">{selectedAgence.adresse}</p>
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Modules actifs
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {selectedAgence.modulesActifs.length > 0 ? (
+                  selectedAgence.modulesActifs.map(moduleId => {
+                    const module = availableModules.find(m => m.id === moduleId);
+                    return (
+                      <Badge key={moduleId} variant="info">
+                        {module ? module.name : moduleId}
+                      </Badge>
+                    );
+                  })
+                ) : (
+                  <p className="text-sm text-gray-500">Aucun module actif</p>
+                )}
+              </div>
+            </div>
+
             {selectedAgence.statut === 'en_attente' && (
               <div className="flex space-x-3">
                 <button
@@ -388,7 +415,14 @@ const AgencesListPage: React.FC = () => {
                     className="mt-1"
                   />
                   <label htmlFor={module.id} className="flex-1">
-                    <p className="font-medium text-gray-900">{module.name}</p>
+                    <div className="flex items-center">
+                      <p className="font-medium text-gray-900">{module.name}</p>
+                      {module.essential && (
+                        <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                          Essentiel
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-500">{module.description}</p>
                   </label>
                 </div>

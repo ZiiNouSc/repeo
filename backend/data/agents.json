@@ -6,9 +6,27 @@
     "email": "sophie.martin@agence.com",
     "telephone": "+33 1 23 45 67 89",
     "permissions": [
-      { "module": "clients", "actions": ["lire", "creer", "modifier"] },
-      { "module": "factures", "actions": ["lire", "creer"] },
-      { "module": "packages", "actions": ["lire"] }
+      {
+        "module": "clients",
+        "actions": [
+          "lire",
+          "creer",
+          "modifier"
+        ]
+      },
+      {
+        "module": "factures",
+        "actions": [
+          "lire",
+          "creer"
+        ]
+      },
+      {
+        "module": "packages",
+        "actions": [
+          "lire"
+        ]
+      }
     ],
     "statut": "actif",
     "dateCreation": "2024-01-10T00:00:00.000Z"
@@ -20,11 +38,27 @@
     "email": "jean.dubois@agence.com",
     "telephone": "+33 1 98 76 54 32",
     "permissions": [
-      { "module": "clients", "actions": ["lire"] },
-      { "module": "factures", "actions": ["lire"] },
-      { "module": "bons-commande", "actions": ["lire", "creer"] }
+      {
+        "module": "clients",
+        "actions": [
+          "lire"
+        ]
+      },
+      {
+        "module": "factures",
+        "actions": [
+          "lire"
+        ]
+      },
+      {
+        "module": "bons-commande",
+        "actions": [
+          "lire",
+          "creer"
+        ]
+      }
     ],
-    "statut": "actif",
+    "statut": "suspendu",
     "dateCreation": "2024-01-08T00:00:00.000Z"
   },
   {
@@ -34,9 +68,29 @@
     "email": "marie.leroy@agence.com",
     "telephone": "+33 4 56 78 90 12",
     "permissions": [
-      { "module": "caisse", "actions": ["lire", "creer", "modifier"] },
-      { "module": "factures", "actions": ["lire", "creer", "modifier"] },
-      { "module": "clients", "actions": ["lire", "creer"] }
+      {
+        "module": "caisse",
+        "actions": [
+          "lire",
+          "creer",
+          "modifier"
+        ]
+      },
+      {
+        "module": "factures",
+        "actions": [
+          "lire",
+          "creer",
+          "modifier"
+        ]
+      },
+      {
+        "module": "clients",
+        "actions": [
+          "lire",
+          "creer"
+        ]
+      }
     ],
     "statut": "suspendu",
     "dateCreation": "2024-01-05T00:00:00.000Z"

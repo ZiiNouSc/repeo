@@ -7,7 +7,32 @@
     "adresse": "123 Rue de la Paix, 75001 Paris",
     "statut": "en_attente",
     "dateInscription": "2024-01-15T00:00:00.000Z",
-    "modulesActifs": []
+    "modulesActifs": [],
+    "vitrineConfig": {
+      "isActive": true,
+      "domainName": "voyages-express.samtech.fr",
+      "title": "Voyages Express - Votre Agence de Voyage",
+      "description": "Découvrez nos offres de voyage exceptionnelles et partez à la découverte du monde avec Voyages Express.",
+      "logo": "/api/placeholder/200/80",
+      "bannerImage": "/api/placeholder/1200/400",
+      "primaryColor": "#3B82F6",
+      "secondaryColor": "#1E40AF",
+      "showPackages": true,
+      "showContact": true,
+      "showAbout": true,
+      "contactInfo": {
+        "phone": "+33 1 23 45 67 89",
+        "email": "contact@voyages-express.com",
+        "address": "123 Rue de la Paix, 75001 Paris",
+        "hours": "Lun-Ven: 9h-18h, Sam: 9h-12h"
+      },
+      "aboutText": "Voyages Express est votre partenaire de confiance pour tous vos projets de voyage. Avec plus de 15 ans d'expérience, nous vous accompagnons dans la réalisation de vos rêves d'évasion.",
+      "socialLinks": {
+        "facebook": "https://facebook.com/voyages-express",
+        "instagram": "https://instagram.com/voyages-express",
+        "twitter": "https://twitter.com/voyages-express"
+      }
+    }
   },
   {
     "id": "2",
@@ -17,7 +42,12 @@
     "adresse": "456 Avenue des Voyages, 69002 Lyon",
     "statut": "approuve",
     "dateInscription": "2024-01-10T00:00:00.000Z",
-    "modulesActifs": ["clients", "factures", "packages", "billets"]
+    "modulesActifs": [
+      "clients",
+      "factures",
+      "packages",
+      "billets"
+    ]
   },
   {
     "id": "3",
@@ -27,6 +57,9 @@
     "adresse": "789 Boulevard du Soleil, 13001 Marseille",
     "statut": "suspendu",
     "dateInscription": "2024-01-05T00:00:00.000Z",
-    "modulesActifs": ["clients", "factures"]
+    "modulesActifs": [
+      "clients",
+      "factures"
+    ]
   }
 ]

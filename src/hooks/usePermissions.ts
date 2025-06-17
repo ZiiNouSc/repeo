@@ -2,18 +2,20 @@ import { useAuth } from '../contexts/AuthContext';
 import { Permission } from '../types';
 
 export const usePermissions = () => {
-  const { user } = useAuth();
+  const { user, currentAgence } = useAuth();
 
   const hasPermission = (module: string, action: string): boolean => {
     if (!user) return false;
     
-    // Superadmin a toutes les permissions
+    // Superadmin has all permissions
     if (user.role === 'superadmin') return true;
     
-    // Agence a toutes les permissions sur ses modules
-    if (user.role === 'agence') return true;
+    // Agency admin has all permissions on active modules
+    if (user.role === 'agence' && currentAgence) {
+      return currentAgence.modulesActifs.includes(module);
+    }
     
-    // Agent : vérifier les permissions spécifiques
+    // Agent: check specific permissions
     if (user.role === 'agent' && user.permissions) {
       const modulePermission = user.permissions.find(p => p.module === module);
       return modulePermission ? modulePermission.actions.includes(action) : false;
@@ -32,13 +34,11 @@ export const usePermissions = () => {
       ];
     }
     
-    if (user.role === 'agence') {
+    if (user.role === 'agence' && currentAgence) {
+      // Return active modules plus always-accessible modules
       return [
-        'dashboard', 'clients', 'fournisseurs', 'bons-commande', 
-        'factures', 'creances', 'caisse', 'situation', 'billets', 
-        'packages', 'vitrine', 'agents', 'parametres', 'crm',
-        'reservations', 'documents', 'todos', 'calendrier',
-        'notifications', 'rapports', 'logs'
+        'dashboard', 'profile', 'parametres', 'agents',
+        ...currentAgence.modulesActifs
       ];
     }
     
@@ -52,11 +52,11 @@ export const usePermissions = () => {
   const canAccessModule = (moduleId: string): boolean => {
     if (!user) return false;
     
-    // Modules accessibles à tous les utilisateurs
+    // Modules accessible to all users
     if (moduleId === 'dashboard') return true;
     if (moduleId === 'profile' && user.role === 'agence') return true;
     
-    // Vérifier les modules accessibles selon le rôle
+    // Check if module is in accessible modules
     const accessibleModules = getAccessibleModules();
     return accessibleModules.includes(moduleId);
   };
@@ -64,12 +64,19 @@ export const usePermissions = () => {
   const getModulePermissions = (moduleId: string): string[] => {
     if (!user) return [];
     
-    // Superadmin et agence ont toutes les permissions
-    if (user.role === 'superadmin' || user.role === 'agence') {
+    // Superadmin has all permissions
+    if (user.role === 'superadmin') {
       return ['lire', 'creer', 'modifier', 'supprimer', 'exporter'];
     }
     
-    // Agent : retourner les permissions spécifiques
+    // Agency admin has all permissions on active modules
+    if (user.role === 'agence' && currentAgence) {
+      if (currentAgence.modulesActifs.includes(moduleId)) {
+        return ['lire', 'creer', 'modifier', 'supprimer', 'exporter'];
+      }
+    }
+    
+    // Agent: return specific permissions
     if (user.role === 'agent' && user.permissions) {
       const modulePermission = user.permissions.find(p => p.module === moduleId);
       return modulePermission ? modulePermission.actions : [];
@@ -78,11 +85,39 @@ export const usePermissions = () => {
     return [];
   };
 
+  const getModuleStatus = (moduleId: string): 'active' | 'pending' | 'inactive' => {
+    if (!user) return 'inactive';
+    
+    // Always active modules
+    if (moduleId === 'dashboard') return 'active';
+    if (moduleId === 'profile' && user.role === 'agence') return 'active';
+    
+    // Superadmin has all modules active
+    if (user.role === 'superadmin') return 'active';
+    
+    // For agency admin
+    if (user.role === 'agence' && currentAgence) {
+      if (currentAgence.modulesActifs.includes(moduleId)) {
+        return 'active';
+      }
+      return 'pending';
+    }
+    
+    // For agents
+    if (user.role === 'agent' && user.permissions) {
+      return user.permissions.some(p => p.module === moduleId) ? 'active' : 'inactive';
+    }
+    
+    return 'inactive';
+  };
+
   return {
     hasPermission,
     getAccessibleModules,
     canAccessModule,
     getModulePermissions,
-    userRole: user?.role
+    getModuleStatus,
+    userRole: user?.role,
+    currentAgence
   };
 };

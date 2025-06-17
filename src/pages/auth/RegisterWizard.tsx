@@ -78,7 +78,12 @@ const RegisterWizard: React.FC = () => {
     { id: 'packages', name: 'Création de Packages', description: 'Créer vos offres voyage', essential: false },
     { id: 'billets', name: 'Billets d\'Avion', description: 'Gérer les réservations', essential: false },
     { id: 'vitrine', name: 'Vitrine Publique', description: 'Site web automatique', essential: false },
-    { id: 'situation', name: 'Situation Financière', description: 'Tableaux de bord', essential: false }
+    { id: 'situation', name: 'Situation Financière', description: 'Tableaux de bord', essential: false },
+    { id: 'documents', name: 'Documents', description: 'Gestion des documents', essential: false },
+    { id: 'todos', name: 'Tâches', description: 'Gestion des tâches', essential: false },
+    { id: 'calendrier', name: 'Calendrier', description: 'Gestion du calendrier', essential: false },
+    { id: 'crm', name: 'CRM', description: 'Gestion des contacts', essential: false },
+    { id: 'reservations', name: 'Réservations', description: 'Gestion des réservations', essential: false }
   ];
 
   const steps = [
@@ -121,6 +126,23 @@ const RegisterWizard: React.FC = () => {
       case 4:
         return true; // Logo optionnel
       case 5:
+        // Ensure essential modules are selected
+        const essentialModuleIds = availableModules
+          .filter(m => m.essential)
+          .map(m => m.id);
+        
+        const hasAllEssentialModules = essentialModuleIds.every(id => 
+          formData.modulesChoisis.includes(id)
+        );
+        
+        if (!hasAllEssentialModules) {
+          // Auto-select essential modules
+          setFormData(prev => ({
+            ...prev,
+            modulesChoisis: [...new Set([...prev.modulesChoisis, ...essentialModuleIds])]
+          }));
+        }
+        
         return formData.modulesChoisis.length > 0;
       default:
         return false;
