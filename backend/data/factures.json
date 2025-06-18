@@ -5,16 +5,16 @@
     "clientId": "1",
     "dateEmission": "2024-01-15T00:00:00.000Z",
     "dateEcheance": "2024-02-15T00:00:00.000Z",
-    "statut": "envoyee",
-    "montantHT": 1000.00,
-    "montantTTC": 1200.00,
+    "statut": "payee",
+    "montantHT": 1000,
+    "montantTTC": 1200,
     "articles": [
       {
         "id": "1",
         "designation": "Package Voyage Paris-Rome",
         "quantite": 1,
-        "prixUnitaire": 1000.00,
-        "montant": 1000.00
+        "prixUnitaire": 1000,
+        "montant": 1000
       }
     ]
   },
@@ -25,15 +25,15 @@
     "dateEmission": "2024-01-10T00:00:00.000Z",
     "dateEcheance": "2024-01-25T00:00:00.000Z",
     "statut": "en_retard",
-    "montantHT": 2500.00,
-    "montantTTC": 3000.00,
+    "montantHT": 2500,
+    "montantTTC": 3000,
     "articles": [
       {
         "id": "1",
         "designation": "Séminaire entreprise - 3 jours",
         "quantite": 1,
-        "prixUnitaire": 2500.00,
-        "montant": 2500.00
+        "prixUnitaire": 2500,
+        "montant": 2500
       }
     ]
   },
@@ -44,15 +44,15 @@
     "dateEmission": "2024-01-12T00:00:00.000Z",
     "dateEcheance": "2024-02-12T00:00:00.000Z",
     "statut": "payee",
-    "montantHT": 750.00,
-    "montantTTC": 900.00,
+    "montantHT": 750,
+    "montantTTC": 900,
     "articles": [
       {
         "id": "1",
         "designation": "Billet avion Marseille-Madrid",
         "quantite": 2,
-        "prixUnitaire": 375.00,
-        "montant": 750.00
+        "prixUnitaire": 375,
+        "montant": 750
       }
     ]
   }
