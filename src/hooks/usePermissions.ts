@@ -30,7 +30,10 @@ export const usePermissions = () => {
     if (user.role === 'superadmin') {
       return [
         'agences', 'tickets', 'parametres', 'permissions', 'audit',
-        'rapports', 'notifications', 'calendrier'
+        'rapports', 'notifications', 'calendrier', 'clients', 'factures',
+        'reservations', 'caisse', 'packages', 'billets', 'documents',
+        'todos', 'fournisseurs', 'bons-commande', 'creances', 'crm',
+        'vitrine', 'situation'
       ];
     }
     
@@ -91,6 +94,7 @@ export const usePermissions = () => {
     // Always active modules
     if (moduleId === 'dashboard') return 'active';
     if (moduleId === 'profile' && user.role === 'agence') return 'active';
+    if (moduleId === 'module-requests' && user.role === 'agence') return 'active';
     
     // Superadmin has all modules active
     if (user.role === 'superadmin') return 'active';

@@ -7,7 +7,8 @@ import {
   Clock,
   CheckCircle,
   AlertTriangle,
-  User
+  User,
+  Send
 } from 'lucide-react';
 import { Table, TableHeader, TableBody, TableRow, TableHeaderCell, TableCell } from '../../components/ui/Table';
 import Badge from '../../components/ui/Badge';
@@ -447,7 +448,7 @@ const TicketsListPage: React.FC = () => {
                     disabled={!response.trim()}
                     className="btn-primary"
                   >
-                    <MessageSquare className="w-4 h-4 mr-2" />
+                    <Send className="w-4 h-4 mr-2" />
                     Envoyer la réponse
                   </button>
                   

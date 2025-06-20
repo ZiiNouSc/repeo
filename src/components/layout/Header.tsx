@@ -104,8 +104,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
             />
           </div>
 
-          {/* Agency Selector - Only show for agency admins */}
-          {user?.role === 'agence' && userAgences.length > 1 && (
+          {/* Agency Selector - Only show for agency admins or agents with multiple agencies */}
+          {(user?.role === 'agence' || user?.role === 'agent') && userAgences.length > 1 && (
             <div className="relative ml-4" ref={agencesMenuRef}>
               <button 
                 onClick={() => setShowAgencesMenu(!showAgencesMenu)}

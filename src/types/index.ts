@@ -19,6 +19,7 @@ export interface Agence {
   statut: 'en_attente' | 'approuve' | 'rejete' | 'suspendu';
   dateInscription: string;
   modulesActifs: string[];
+  modulesChoisis?: string[];
   informationsBancaires?: {
     banque: string;
     rib: string;
@@ -135,13 +136,26 @@ export interface Agent {
 export interface Ticket {
   id: string;
   agenceId: string;
-  agence: Agence;
+  agence: {
+    nom: string;
+    email: string;
+    telephone: string;
+  };
   sujet: string;
   description: string;
   statut: 'ouvert' | 'en_cours' | 'ferme';
   priorite: 'faible' | 'normale' | 'haute' | 'urgente';
   dateCreation: string;
   dateMAJ: string;
+  reponses?: TicketReponse[];
+}
+
+export interface TicketReponse {
+  id: string;
+  message: string;
+  date: string;
+  userId: string;
+  userName: string;
 }
 
 export interface Reservation {
@@ -243,4 +257,20 @@ export interface AuditLog {
   affectedResource?: string;
   oldValue?: any;
   newValue?: any;
+}
+
+export interface ModuleRequest {
+  id: string;
+  agenceId: string;
+  modules: string[];
+  message: string;
+  statut: 'en_attente' | 'approuve' | 'rejete';
+  dateCreation: string;
+  dateTraitement?: string;
+  commentaireAdmin?: string;
+  agence: {
+    nom: string;
+    email: string;
+    telephone: string;
+  };
 }

@@ -88,6 +88,11 @@ const ReservationsListPage: React.FC = () => {
   };
 
   const handleUpdateStatus = async (reservationId: string, newStatus: string) => {
+    if (!reservationId) {
+      console.error('Reservation ID is undefined');
+      return;
+    }
+    
     try {
       await reservationsAPI.updateStatus(reservationId, newStatus);
       setReservations(prev => prev.map(reservation => 

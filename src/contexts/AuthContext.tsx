@@ -56,6 +56,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               localStorage.setItem('samtech_current_agence', agences[0].id);
             }
           });
+        } else if (userData.role === 'agent') {
+          // For agents, fetch their assigned agencies
+          fetchAgentAgences(userData).then(agences => {
+            setUserAgences(agences);
+            
+            // Set current agency
+            if (savedAgenceId && agences.some(a => a.id === savedAgenceId)) {
+              const currentAgence = agences.find(a => a.id === savedAgenceId) || null;
+              setCurrentAgence(currentAgence);
+            } else if (agences.length > 0) {
+              setCurrentAgence(agences[0]);
+              localStorage.setItem('samtech_current_agence', agences[0].id);
+            }
+          });
         }
       } catch (error) {
         console.error('Error parsing saved user:', error);
@@ -98,6 +112,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const fetchAgentAgences = async (userData: User): Promise<Agence[]> => {
+    try {
+      // In a real app, this would be an API call to get the agent's assigned agencies
+      const response = await axios.get('/api/user/agences');
+      return response.data.data || [];
+    } catch (error) {
+      console.error('Error fetching agent agencies:', error);
+      return [];
+    }
+  };
+
   const login = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
@@ -112,6 +137,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // If user is an agency admin, fetch their agencies
         if (userData.role === 'agence') {
           const agences = await fetchUserAgences(userData);
+          setUserAgences(agences);
+          
+          if (agences.length > 0) {
+            setCurrentAgence(agences[0]);
+            localStorage.setItem('samtech_current_agence', agences[0].id);
+          }
+        } else if (userData.role === 'agent') {
+          // For agents, fetch their assigned agencies
+          const agences = await fetchAgentAgences(userData);
           setUserAgences(agences);
           
           if (agences.length > 0) {
