@@ -5,6 +5,15 @@ const Agence = require('../models/agenceModel');
 
 // Protect routes
 const protect = asyncHandler(async (req, res, next) => {
+  // For development only - allow all requests without token
+  if (process.env.NODE_ENV === 'development') {
+    req.user = {
+      _id: '60d0fe4f5311236168a109ca',
+      role: 'superadmin'
+    };
+    return next();
+  }
+  
   let token;
 
   // Check for token in headers
@@ -28,14 +37,6 @@ const protect = asyncHandler(async (req, res, next) => {
       res.status(401);
       throw new Error('Not authorized, token failed');
     }
-  } else if (process.env.NODE_ENV === 'development') {
-    // For development only - allow requests without token
-    // This is a temporary solution for testing
-    req.user = {
-      _id: '60d0fe4f5311236168a109ca',
-      role: 'superadmin'
-    };
-    next();
   } else if (!token) {
     res.status(401);
     throw new Error('Not authorized, no token');
@@ -44,7 +45,7 @@ const protect = asyncHandler(async (req, res, next) => {
 
 // Admin middleware
 const admin = (req, res, next) => {
-  if (req.user && req.user.role === 'superadmin') {
+  if (process.env.NODE_ENV === 'development' || (req.user && req.user.role === 'superadmin')) {
     next();
   } else {
     res.status(401);
@@ -54,7 +55,7 @@ const admin = (req, res, next) => {
 
 // Agency middleware
 const agency = (req, res, next) => {
-  if (req.user && (req.user.role === 'agence' || req.user.role === 'superadmin')) {
+  if (process.env.NODE_ENV === 'development' || (req.user && (req.user.role === 'agence' || req.user.role === 'superadmin'))) {
     next();
   } else {
     res.status(401);
