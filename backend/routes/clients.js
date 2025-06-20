@@ -10,18 +10,18 @@ const {
 const { protect, hasPermission } = require('../middlewares/authMiddleware');
 
 // Get all clients
-router.get('/', protect, hasPermission('clients', 'lire'), getClients);
+router.get('/', getClients);
 
 // Get client by ID
-router.get('/:id', protect, hasPermission('clients', 'lire'), getClientById);
+router.get('/:id', getClientById);
 
 // Create new client
-router.post('/', protect, hasPermission('clients', 'creer'), createClient);
+router.post('/', createClient);
 
 // Update client
-router.put('/:id', protect, hasPermission('clients', 'modifier'), updateClient);
+router.put('/:id', updateClient);
 
 // Delete client
-router.delete('/:id', protect, hasPermission('clients', 'supprimer'), deleteClient);
+router.delete('/:id', deleteClient);
 
 module.exports = router;

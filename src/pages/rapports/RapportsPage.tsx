@@ -11,7 +11,7 @@ import {
   Euro,
   Plane,
   Building2,
-  Package as PackageIcon,
+  PackageIcon,
   Car,
   Eye
 } from 'lucide-react';

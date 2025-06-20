@@ -5,8 +5,15 @@ const Client = require('../models/clientModel');
 // @route   GET /api/clients
 // @access  Private
 const getClients = asyncHandler(async (req, res) => {
-  // In a real app, filter by agency ID from authenticated user
-  const clients = await Client.find({});
+  // Filter by agency ID from authenticated user
+  const agenceId = req.user?.agenceId || req.query.agenceId;
+  
+  let query = {};
+  if (agenceId) {
+    query.agenceId = agenceId;
+  }
+  
+  const clients = await Client.find(query);
   
   res.status(200).json({
     success: true,
@@ -46,8 +53,8 @@ const createClient = asyncHandler(async (req, res) => {
     });
   }
   
-  // In a real app, get agenceId from authenticated user
-  const agenceId = req.user?.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
+  // Get agenceId from authenticated user or from request body
+  const agenceId = req.user?.agenceId || req.body.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
   
   const client = await Client.create({
     nom,
