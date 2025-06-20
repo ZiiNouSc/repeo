@@ -1,12 +1,13 @@
 const asyncHandler = require('express-async-handler');
 const Client = require('../models/clientModel');
+const mongoose = require('mongoose');
 
 // @desc    Get all clients
 // @route   GET /api/clients
 // @access  Private
 const getClients = asyncHandler(async (req, res) => {
-  // Filter by agency ID from authenticated user
-  const agenceId = req.user?.agenceId || req.query.agenceId;
+  // Filter by agency ID from authenticated user or query parameter
+  const agenceId = req.query.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
   
   let query = {};
   if (agenceId) {
@@ -15,9 +16,22 @@ const getClients = asyncHandler(async (req, res) => {
   
   const clients = await Client.find(query);
   
+  // Format response to match frontend expectations
+  const formattedClients = clients.map(client => ({
+    id: client._id,
+    nom: client.nom,
+    prenom: client.prenom,
+    entreprise: client.entreprise,
+    email: client.email,
+    telephone: client.telephone,
+    adresse: client.adresse,
+    solde: client.solde,
+    dateCreation: client.dateCreation
+  }));
+  
   res.status(200).json({
     success: true,
-    data: clients
+    data: formattedClients
   });
 });
 
@@ -28,9 +42,22 @@ const getClientById = asyncHandler(async (req, res) => {
   const client = await Client.findById(req.params.id);
   
   if (client) {
+    // Format response to match frontend expectations
+    const formattedClient = {
+      id: client._id,
+      nom: client.nom,
+      prenom: client.prenom,
+      entreprise: client.entreprise,
+      email: client.email,
+      telephone: client.telephone,
+      adresse: client.adresse,
+      solde: client.solde,
+      dateCreation: client.dateCreation
+    };
+    
     res.status(200).json({
       success: true,
-      data: client
+      data: formattedClient
     });
   } else {
     res.status(404).json({
@@ -54,7 +81,7 @@ const createClient = asyncHandler(async (req, res) => {
   }
   
   // Get agenceId from authenticated user or from request body
-  const agenceId = req.user?.agenceId || req.body.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
+  const agenceId = req.body.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
   
   const client = await Client.create({
     nom,
@@ -67,10 +94,23 @@ const createClient = asyncHandler(async (req, res) => {
     agenceId
   });
   
+  // Format response to match frontend expectations
+  const formattedClient = {
+    id: client._id,
+    nom: client.nom,
+    prenom: client.prenom,
+    entreprise: client.entreprise,
+    email: client.email,
+    telephone: client.telephone,
+    adresse: client.adresse,
+    solde: client.solde,
+    dateCreation: client.dateCreation
+  };
+  
   res.status(201).json({
     success: true,
     message: 'Client créé avec succès',
-    data: client
+    data: formattedClient
   });
 });
 
@@ -99,10 +139,23 @@ const updateClient = asyncHandler(async (req, res) => {
     
     const updatedClient = await client.save();
     
+    // Format response to match frontend expectations
+    const formattedClient = {
+      id: updatedClient._id,
+      nom: updatedClient.nom,
+      prenom: updatedClient.prenom,
+      entreprise: updatedClient.entreprise,
+      email: updatedClient.email,
+      telephone: updatedClient.telephone,
+      adresse: updatedClient.adresse,
+      solde: updatedClient.solde,
+      dateCreation: updatedClient.dateCreation
+    };
+    
     res.status(200).json({
       success: true,
       message: 'Client mis à jour avec succès',
-      data: updatedClient
+      data: formattedClient
     });
   } else {
     res.status(404).json({

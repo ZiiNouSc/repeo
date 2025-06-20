@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const Facture = require('../models/factureModel');
 const Client = require('../models/clientModel');
+const mongoose = require('mongoose');
 
 // @desc    Get all factures
 // @route   GET /api/factures

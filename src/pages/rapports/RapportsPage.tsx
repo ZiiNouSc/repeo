@@ -22,24 +22,39 @@ import { useAuth } from '../../contexts/AuthContext';
 
 interface RapportData {
   periode: string;
-  chiffreAffaires: number;
-  nombreClients: number;
-  nombreReservations: number;
-  ticketMoyen: number;
-  topDestinations: Array<{
-    destination: string;
-    reservations: number;
-    ca: number;
-  }>;
-  evolutionMensuelle: Array<{
+  chiffreAffaires: {
+    moisActuel: number;
+    moisPrecedent: number;
+    evolution: number;
+  };
+  benefices: {
+    moisActuel: number;
+    moisPrecedent: number;
+    evolution: number;
+  };
+  depenses: {
+    moisActuel: number;
+    moisPrecedent: number;
+    evolution: number;
+  };
+  creances: {
+    total: number;
+    enRetard: number;
+  };
+  ventesParMois: Array<{
     mois: string;
-    ca: number;
+    montant: number;
     reservations: number;
   }>;
-  repartitionTypes: Array<{
-    type: string;
-    pourcentage: number;
+  topClients: Array<{
+    nom: string;
     montant: number;
+    pourcentage: number;
+  }>;
+  repartitionVentes: Array<{
+    categorie: string;
+    montant: number;
+    pourcentage: number;
   }>;
 }
 
@@ -62,30 +77,46 @@ const RapportsPage: React.FC = () => {
       // Mock data - à remplacer par un vrai appel API
       setData({
         periode: `${selectedPeriod} ${selectedYear}`,
-        chiffreAffaires: 125430,
-        nombreClients: 89,
-        nombreReservations: 156,
-        ticketMoyen: 804,
-        topDestinations: [
-          { destination: 'Rome, Italie', reservations: 23, ca: 28750 },
-          { destination: 'Madrid, Espagne', reservations: 18, ca: 22400 },
-          { destination: 'Londres, UK', reservations: 15, ca: 31200 },
-          { destination: 'Amsterdam, Pays-Bas', reservations: 12, ca: 18600 },
-          { destination: 'Barcelone, Espagne', reservations: 10, ca: 15800 }
+        chiffreAffaires: {
+          moisActuel: 45230,
+          moisPrecedent: 38950,
+          evolution: 16.1
+        },
+        benefices: {
+          moisActuel: 12450,
+          moisPrecedent: 10200,
+          evolution: 22.1
+        },
+        depenses: {
+          moisActuel: 32780,
+          moisPrecedent: 28750,
+          evolution: 14.0
+        },
+        creances: {
+          total: 8950,
+          enRetard: 3200
+        },
+        ventesParMois: [
+          { mois: 'Jan', montant: 32000, reservations: 22 },
+          { mois: 'Fév', montant: 28500, reservations: 28 },
+          { mois: 'Mar', montant: 35200, reservations: 25 },
+          { mois: 'Avr', montant: 41800, reservations: 32 },
+          { mois: 'Mai', montant: 38950, reservations: 27 },
+          { mois: 'Juin', montant: 45230, reservations: 22 }
         ],
-        evolutionMensuelle: [
-          { mois: 'Jan', ca: 18500, reservations: 22 },
-          { mois: 'Fév', ca: 22300, reservations: 28 },
-          { mois: 'Mar', ca: 19800, reservations: 25 },
-          { mois: 'Avr', ca: 25600, reservations: 32 },
-          { mois: 'Mai', ca: 21200, reservations: 27 },
-          { mois: 'Juin', ca: 18030, reservations: 22 }
+        topClients: [
+          { nom: 'Entreprise ABC', montant: 12500, pourcentage: 27.6 },
+          { nom: 'Martin Dubois', montant: 8900, pourcentage: 19.7 },
+          { nom: 'Sophie Martin', montant: 6750, pourcentage: 14.9 },
+          { nom: 'Jean Dupont', montant: 5200, pourcentage: 11.5 },
+          { nom: 'Autres', montant: 11880, pourcentage: 26.3 }
         ],
-        repartitionTypes: [
-          { type: 'Packages', pourcentage: 45, montant: 56444 },
-          { type: 'Vols', pourcentage: 30, montant: 37629 },
-          { type: 'Hôtels', pourcentage: 20, montant: 25086 },
-          { type: 'Transport', pourcentage: 5, montant: 6271 }
+        repartitionVentes: [
+          { categorie: 'Packages voyage', montant: 18500, pourcentage: 40.9 },
+          { categorie: 'Billets d\'avion', montant: 12800, pourcentage: 28.3 },
+          { categorie: 'Hébergement', montant: 8900, pourcentage: 19.7 },
+          { categorie: 'Transport', montant: 3200, pourcentage: 7.1 },
+          { categorie: 'Autres', montant: 1830, pourcentage: 4.0 }
         ]
       });
     } catch (error) {
@@ -167,7 +198,7 @@ const RapportsPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Chiffre d'Affaires"
-          value={data.chiffreAffaires.toLocaleString('fr-FR', { 
+          value={data.chiffreAffaires.moisActuel.toLocaleString('fr-FR', { 
             style: 'currency', 
             currency: 'EUR' 
           })}
@@ -180,7 +211,7 @@ const RapportsPage: React.FC = () => {
         />
         <StatCard
           title="Nombre de Clients"
-          value={data.nombreClients}
+          value={89}
           icon={Users}
           color="blue"
           trend={{
@@ -190,7 +221,7 @@ const RapportsPage: React.FC = () => {
         />
         <StatCard
           title="Réservations"
-          value={data.nombreReservations}
+          value={156}
           icon={Calendar}
           color="purple"
           trend={{
@@ -200,10 +231,7 @@ const RapportsPage: React.FC = () => {
         />
         <StatCard
           title="Ticket Moyen"
-          value={data.ticketMoyen.toLocaleString('fr-FR', { 
-            style: 'currency', 
-            currency: 'EUR' 
-          })}
+          value={804}
           icon={TrendingUp}
           color="orange"
           trend={{
@@ -222,9 +250,9 @@ const RapportsPage: React.FC = () => {
           </div>
           
           <div className="space-y-4">
-            {data.evolutionMensuelle.map((item, index) => {
-              const maxCA = Math.max(...data.evolutionMensuelle.map(v => v.ca));
-              const percentage = (item.ca / maxCA) * 100;
+            {data.ventesParMois.map((item, index) => {
+              const maxCA = Math.max(...data.ventesParMois.map(v => v.montant));
+              const percentage = (item.montant / maxCA) * 100;
               
               return (
                 <div key={index} className="space-y-2">
@@ -232,7 +260,7 @@ const RapportsPage: React.FC = () => {
                     <span className="font-medium text-gray-700">{item.mois}</span>
                     <div className="text-right">
                       <p className="font-semibold text-gray-900">
-                        {item.ca.toLocaleString('fr-FR', { 
+                        {item.montant.toLocaleString('fr-FR', { 
                           style: 'currency', 
                           currency: 'EUR' 
                         })}
@@ -260,7 +288,13 @@ const RapportsPage: React.FC = () => {
           </div>
           
           <div className="space-y-4">
-            {data.topDestinations.map((destination, index) => (
+            {[
+              { destination: 'Rome, Italie', reservations: 23, ca: 28750 },
+              { destination: 'Madrid, Espagne', reservations: 18, ca: 22400 },
+              { destination: 'Londres, UK', reservations: 15, ca: 31200 },
+              { destination: 'Amsterdam, Pays-Bas', reservations: 12, ca: 18600 },
+              { destination: 'Barcelone, Espagne', reservations: 10, ca: 15800 }
+            ].map((destination, index) => (
               <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-medium ${
@@ -297,7 +331,7 @@ const RapportsPage: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {data.repartitionTypes.map((type, index) => (
+          {data.repartitionVentes.map((type, index) => (
             <div key={index} className="text-center p-4 border border-gray-200 rounded-lg">
               <div className={`w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center ${
                 index === 0 ? 'bg-blue-100' :
@@ -309,7 +343,7 @@ const RapportsPage: React.FC = () => {
                 {index === 2 && <Building2 className="w-8 h-8 text-purple-600" />}
                 {index === 3 && <Car className="w-8 h-8 text-orange-600" />}
               </div>
-              <h3 className="font-medium text-gray-900 mb-1">{type.type}</h3>
+              <h3 className="font-medium text-gray-900 mb-1">{type.categorie}</h3>
               <p className="text-2xl font-bold text-gray-900 mb-1">{type.pourcentage}%</p>
               <p className="text-sm text-gray-600">
                 {type.montant.toLocaleString('fr-FR', { 

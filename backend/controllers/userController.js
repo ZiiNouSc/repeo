@@ -2,6 +2,7 @@ const asyncHandler = require('express-async-handler');
 const User = require('../models/userModel');
 const Agence = require('../models/agenceModel');
 const generateToken = require('../utils/generateToken');
+const mongoose = require('mongoose');
 
 // @desc    Auth user & get token
 // @route   POST /api/auth/login

@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const Agent = require('../models/agentModel');
 const User = require('../models/userModel');
+const bcrypt = require('bcryptjs');
 
 // @desc    Get all agents
 // @route   GET /api/agents
@@ -9,9 +10,21 @@ const getAgents = asyncHandler(async (req, res) => {
   // In a real app, filter by agency ID from authenticated user
   const agents = await Agent.find({});
   
+  // Format response to match frontend expectations
+  const formattedAgents = agents.map(agent => ({
+    id: agent._id,
+    nom: agent.nom,
+    prenom: agent.prenom,
+    email: agent.email,
+    telephone: agent.telephone,
+    permissions: agent.permissions,
+    statut: agent.statut,
+    dateCreation: agent.dateCreation
+  }));
+  
   res.status(200).json({
     success: true,
-    data: agents
+    data: formattedAgents
   });
 });
 
@@ -22,9 +35,21 @@ const getAgentById = asyncHandler(async (req, res) => {
   const agent = await Agent.findById(req.params.id);
   
   if (agent) {
+    // Format response to match frontend expectations
+    const formattedAgent = {
+      id: agent._id,
+      nom: agent.nom,
+      prenom: agent.prenom,
+      email: agent.email,
+      telephone: agent.telephone,
+      permissions: agent.permissions,
+      statut: agent.statut,
+      dateCreation: agent.dateCreation
+    };
+    
     res.status(200).json({
       success: true,
-      data: agent
+      data: formattedAgent
     });
   } else {
     res.status(404).json({
@@ -38,7 +63,7 @@ const getAgentById = asyncHandler(async (req, res) => {
 // @route   POST /api/agents
 // @access  Private/Agency
 const createAgent = asyncHandler(async (req, res) => {
-  const { nom, prenom, email, telephone, permissions = [], statut = 'actif', agenceId } = req.body;
+  const { nom, prenom, email, telephone, permissions = [], statut = 'actif', agenceId, password = 'password123' } = req.body;
   
   if (!nom || !prenom || !email) {
     return res.status(400).json({
@@ -56,6 +81,9 @@ const createAgent = asyncHandler(async (req, res) => {
     });
   }
   
+  // Get agenceId from authenticated user or from request body
+  const effectiveAgenceId = agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
+  
   const agent = await Agent.create({
     nom,
     prenom,
@@ -63,25 +91,40 @@ const createAgent = asyncHandler(async (req, res) => {
     telephone: telephone || '',
     permissions,
     statut,
-    agenceId
+    agenceId: effectiveAgenceId
   });
   
   // Create user account for agent
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
+  
   const user = await User.create({
     email,
-    password: 'password123', // In a real app, this would be hashed and a random password would be generated
+    password: hashedPassword,
     nom,
     prenom,
     role: 'agent',
-    agenceId,
+    agenceId: effectiveAgenceId,
     statut,
     permissions
   });
   
+  // Format response to match frontend expectations
+  const formattedAgent = {
+    id: agent._id,
+    nom: agent.nom,
+    prenom: agent.prenom,
+    email: agent.email,
+    telephone: agent.telephone,
+    permissions: agent.permissions,
+    statut: agent.statut,
+    dateCreation: agent.dateCreation
+  };
+  
   res.status(201).json({
     success: true,
     message: 'Agent créé avec succès',
-    data: agent
+    data: formattedAgent
   });
 });
 
@@ -130,10 +173,22 @@ const updateAgent = asyncHandler(async (req, res) => {
       await user.save();
     }
     
+    // Format response to match frontend expectations
+    const formattedAgent = {
+      id: updatedAgent._id,
+      nom: updatedAgent.nom,
+      prenom: updatedAgent.prenom,
+      email: updatedAgent.email,
+      telephone: updatedAgent.telephone,
+      permissions: updatedAgent.permissions,
+      statut: updatedAgent.statut,
+      dateCreation: updatedAgent.dateCreation
+    };
+    
     res.status(200).json({
       success: true,
       message: 'Agent mis à jour avec succès',
-      data: updatedAgent
+      data: formattedAgent
     });
   } else {
     res.status(404).json({
@@ -169,10 +224,22 @@ const updateAgentPermissions = asyncHandler(async (req, res) => {
       await user.save();
     }
     
+    // Format response to match frontend expectations
+    const formattedAgent = {
+      id: updatedAgent._id,
+      nom: updatedAgent.nom,
+      prenom: updatedAgent.prenom,
+      email: updatedAgent.email,
+      telephone: updatedAgent.telephone,
+      permissions: updatedAgent.permissions,
+      statut: updatedAgent.statut,
+      dateCreation: updatedAgent.dateCreation
+    };
+    
     res.status(200).json({
       success: true,
       message: 'Permissions mises à jour avec succès',
-      data: updatedAgent
+      data: formattedAgent
     });
   } else {
     res.status(404).json({

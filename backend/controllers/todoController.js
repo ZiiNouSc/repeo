@@ -1,16 +1,40 @@
 const asyncHandler = require('express-async-handler');
 const Todo = require('../models/todoModel');
+const Client = require('../models/clientModel');
+const mongoose = require('mongoose');
 
 // @desc    Get all todos
 // @route   GET /api/todos
 // @access  Private
 const getTodos = asyncHandler(async (req, res) => {
   // In a real app, filter by agency ID from authenticated user
-  const todos = await Todo.find({});
+  const agenceId = req.query.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
+  
+  let query = {};
+  if (agenceId) {
+    query.agenceId = agenceId;
+  }
+  
+  const todos = await Todo.find(query);
+  
+  // Format response to match frontend expectations
+  const formattedTodos = todos.map(todo => ({
+    id: todo._id,
+    titre: todo.titre,
+    description: todo.description,
+    clientId: todo.clientId,
+    clientNom: todo.clientNom,
+    dateEcheance: todo.dateEcheance,
+    priorite: todo.priorite,
+    statut: todo.statut,
+    type: todo.type,
+    dateCreation: todo.dateCreation,
+    assigneA: todo.assigneA
+  }));
   
   res.status(200).json({
     success: true,
-    data: todos
+    data: formattedTodos
   });
 });
 
@@ -21,9 +45,24 @@ const getTodoById = asyncHandler(async (req, res) => {
   const todo = await Todo.findById(req.params.id);
   
   if (todo) {
+    // Format response to match frontend expectations
+    const formattedTodo = {
+      id: todo._id,
+      titre: todo.titre,
+      description: todo.description,
+      clientId: todo.clientId,
+      clientNom: todo.clientNom,
+      dateEcheance: todo.dateEcheance,
+      priorite: todo.priorite,
+      statut: todo.statut,
+      type: todo.type,
+      dateCreation: todo.dateCreation,
+      assigneA: todo.assigneA
+    };
+    
     res.status(200).json({
       success: true,
-      data: todo
+      data: formattedTodo
     });
   } else {
     res.status(404).json({
@@ -55,13 +94,19 @@ const createTodo = asyncHandler(async (req, res) => {
   }
   
   // In a real app, get agenceId from authenticated user
-  const agenceId = req.user?.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
+  const agenceId = req.body.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
   
   // If clientId is provided, get client name
   let clientNom = '';
   if (clientId) {
-    // In a real app, fetch client name from database
-    clientNom = 'Client Name'; // Placeholder
+    try {
+      const client = await Client.findById(clientId);
+      if (client) {
+        clientNom = client.entreprise || `${client.prenom} ${client.nom}`;
+      }
+    } catch (error) {
+      console.error('Error fetching client:', error);
+    }
   }
   
   const todo = await Todo.create({
@@ -77,10 +122,25 @@ const createTodo = asyncHandler(async (req, res) => {
     agenceId
   });
   
+  // Format response to match frontend expectations
+  const formattedTodo = {
+    id: todo._id,
+    titre: todo.titre,
+    description: todo.description,
+    clientId: todo.clientId,
+    clientNom: todo.clientNom,
+    dateEcheance: todo.dateEcheance,
+    priorite: todo.priorite,
+    statut: todo.statut,
+    type: todo.type,
+    dateCreation: todo.dateCreation,
+    assigneA: todo.assigneA
+  };
+  
   res.status(201).json({
     success: true,
     message: 'Tâche créée avec succès',
-    data: todo
+    data: formattedTodo
   });
 });
 
@@ -111,9 +171,15 @@ const updateTodo = asyncHandler(async (req, res) => {
   if (todo) {
     // If clientId is provided and different from current, get client name
     let clientNom = todo.clientNom;
-    if (clientId && clientId !== todo.clientId) {
-      // In a real app, fetch client name from database
-      clientNom = 'Client Name'; // Placeholder
+    if (clientId && clientId !== todo.clientId?.toString()) {
+      try {
+        const client = await Client.findById(clientId);
+        if (client) {
+          clientNom = client.entreprise || `${client.prenom} ${client.nom}`;
+        }
+      } catch (error) {
+        console.error('Error fetching client:', error);
+      }
     }
     
     todo.titre = titre;
@@ -128,10 +194,25 @@ const updateTodo = asyncHandler(async (req, res) => {
     
     const updatedTodo = await todo.save();
     
+    // Format response to match frontend expectations
+    const formattedTodo = {
+      id: updatedTodo._id,
+      titre: updatedTodo.titre,
+      description: updatedTodo.description,
+      clientId: updatedTodo.clientId,
+      clientNom: updatedTodo.clientNom,
+      dateEcheance: updatedTodo.dateEcheance,
+      priorite: updatedTodo.priorite,
+      statut: updatedTodo.statut,
+      type: updatedTodo.type,
+      dateCreation: updatedTodo.dateCreation,
+      assigneA: updatedTodo.assigneA
+    };
+    
     res.status(200).json({
       success: true,
       message: 'Tâche mise à jour avec succès',
-      data: updatedTodo
+      data: formattedTodo
     });
   } else {
     res.status(404).json({
@@ -164,10 +245,25 @@ const toggleTodoStatus = asyncHandler(async (req, res) => {
     
     const updatedTodo = await todo.save();
     
+    // Format response to match frontend expectations
+    const formattedTodo = {
+      id: updatedTodo._id,
+      titre: updatedTodo.titre,
+      description: updatedTodo.description,
+      clientId: updatedTodo.clientId,
+      clientNom: updatedTodo.clientNom,
+      dateEcheance: updatedTodo.dateEcheance,
+      priorite: updatedTodo.priorite,
+      statut: updatedTodo.statut,
+      type: updatedTodo.type,
+      dateCreation: updatedTodo.dateCreation,
+      assigneA: updatedTodo.assigneA
+    };
+    
     res.status(200).json({
       success: true,
       message: 'Statut de la tâche mis à jour avec succès',
-      data: updatedTodo
+      data: formattedTodo
     });
   } else {
     res.status(404).json({
