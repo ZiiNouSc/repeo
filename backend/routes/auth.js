@@ -4,7 +4,8 @@ const {
   loginUser, 
   registerUser, 
   logoutUser, 
-  getUserProfile 
+  getUserProfile,
+  getUserAgences
 } = require('../controllers/userController');
 const { protect } = require('../middlewares/authMiddleware');
 
@@ -19,5 +20,8 @@ router.post('/logout', logoutUser);
 
 // Get current user route
 router.get('/me', protect, getUserProfile);
+
+// Get user's agencies
+router.get('/agences', protect, getUserAgences);
 
 module.exports = router;

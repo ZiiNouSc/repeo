@@ -20,6 +20,24 @@ const loginUser = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email });
 
   if (user && (await user.matchPassword(password))) {
+    // Pour les agents, récupérer les agences associées
+    let userAgences = [];
+    if (user.role === 'agent') {
+      if (user.agences && user.agences.length > 0) {
+        userAgences = await Agence.find({ _id: { $in: user.agences } });
+      } else if (user.agenceId) {
+        const agence = await Agence.findById(user.agenceId);
+        if (agence) {
+          userAgences = [agence];
+        }
+      }
+    } else if (user.role === 'agence' && user.agenceId) {
+      const agence = await Agence.findById(user.agenceId);
+      if (agence) {
+        userAgences = [agence];
+      }
+    }
+
     // Remove password from response
     const userWithoutPassword = {
       id: user._id,
@@ -28,6 +46,13 @@ const loginUser = asyncHandler(async (req, res) => {
       prenom: user.prenom,
       role: user.role,
       agenceId: user.agenceId,
+      agences: userAgences.map(a => ({
+        id: a._id,
+        nom: a.nom,
+        email: a.email,
+        statut: a.statut,
+        modulesActifs: a.modulesActifs
+      })),
       statut: user.statut,
       permissions: user.permissions
     };
@@ -88,6 +113,7 @@ const registerUser = asyncHandler(async (req, res) => {
     adresse: `${adresse}, ${codePostal} ${ville}, ${pays}`,
     statut: 'en_attente',
     modulesActifs: [],
+    modulesDemandes: modulesChoisis,
     modulesChoisis,
     typeActivite,
     siret
@@ -165,9 +191,61 @@ const getUserProfile = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Get user's agencies
+// @route   GET /api/user/agences
+// @access  Private/Agent
+const getUserAgences = asyncHandler(async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentification requise'
+    });
+  }
+
+  // Si l'utilisateur est un agent, récupérer ses agences
+  if (req.user.role === 'agent') {
+    let agences = [];
+    
+    if (req.user.agences && req.user.agences.length > 0) {
+      agences = await Agence.find({ _id: { $in: req.user.agences } });
+    } else if (req.user.agenceId) {
+      const agence = await Agence.findById(req.user.agenceId);
+      if (agence) {
+        agences = [agence];
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      data: agences
+    });
+  } else if (req.user.role === 'agence' && req.user.agenceId) {
+    // Si l'utilisateur est une agence, renvoyer son agence
+    const agence = await Agence.findById(req.user.agenceId);
+    
+    if (agence) {
+      res.status(200).json({
+        success: true,
+        data: [agence]
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: 'Agence non trouvée'
+      });
+    }
+  } else {
+    res.status(403).json({
+      success: false,
+      message: 'Accès non autorisé'
+    });
+  }
+});
+
 module.exports = {
   loginUser,
   registerUser,
   logoutUser,
-  getUserProfile
+  getUserProfile,
+  getUserAgences
 };

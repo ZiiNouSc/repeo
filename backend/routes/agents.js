@@ -5,7 +5,8 @@ const {
   getAgentById, 
   createAgent, 
   updateAgent, 
-  updateAgentPermissions, 
+  updateAgentPermissions,
+  assignAgentToAgencies,
   deleteAgent 
 } = require('../controllers/agentController');
 const { protect, agency } = require('../middlewares/authMiddleware');
@@ -24,6 +25,9 @@ router.put('/:id', protect, agency, updateAgent);
 
 // Update agent permissions
 router.put('/:id/permissions', protect, agency, updateAgentPermissions);
+
+// Assign agent to agencies
+router.put('/:id/agencies', protect, agency, assignAgentToAgencies);
 
 // Delete agent
 router.delete('/:id', protect, agency, deleteAgent);

@@ -5,6 +5,7 @@ export interface User {
   prenom: string;
   role: 'superadmin' | 'agence' | 'agent';
   agenceId?: string;
+  agences?: Agence[];
   permissions?: Permission[];
   statut?: 'actif' | 'suspendu' | 'en_attente';
 }
@@ -19,6 +20,7 @@ export interface Agence {
   statut: 'en_attente' | 'approuve' | 'rejete' | 'suspendu';
   dateInscription: string;
   modulesActifs: string[];
+  modulesDemandes?: string[];
   modulesChoisis?: string[];
   informationsBancaires?: {
     banque: string;
@@ -151,11 +153,12 @@ export interface Ticket {
 }
 
 export interface TicketReponse {
-  id: string;
+  id?: string;
   message: string;
   date: string;
   userId: string;
   userName: string;
+  userRole: string;
 }
 
 export interface Reservation {

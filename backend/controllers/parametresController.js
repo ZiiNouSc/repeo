@@ -6,8 +6,15 @@ const crypto = require('crypto');
 // @route   GET /api/parametres
 // @access  Private/Agency
 const getParametres = asyncHandler(async (req, res) => {
-  // In a real app, get agenceId from authenticated user
-  const agenceId = req.user?.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
+  // Get agenceId from authenticated user
+  const agenceId = req.user?.agenceId;
+  
+  if (!agenceId) {
+    return res.status(400).json({
+      success: false,
+      message: 'ID d\'agence manquant'
+    });
+  }
   
   const agence = await Agence.findById(agenceId);
   
@@ -69,8 +76,15 @@ const getParametres = asyncHandler(async (req, res) => {
 // @route   PUT /api/parametres
 // @access  Private/Agency
 const updateParametres = asyncHandler(async (req, res) => {
-  // In a real app, get agenceId from authenticated user
-  const agenceId = req.user?.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
+  // Get agenceId from authenticated user
+  const agenceId = req.user?.agenceId;
+  
+  if (!agenceId) {
+    return res.status(400).json({
+      success: false,
+      message: 'ID d\'agence manquant'
+    });
+  }
   
   const agence = await Agence.findById(agenceId);
   
@@ -96,8 +110,15 @@ const updateParametres = asyncHandler(async (req, res) => {
 // @route   POST /api/parametres/generate-api-key
 // @access  Private/Agency
 const generateApiKey = asyncHandler(async (req, res) => {
-  // In a real app, get agenceId from authenticated user
-  const agenceId = req.user?.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
+  // Get agenceId from authenticated user
+  const agenceId = req.user?.agenceId;
+  
+  if (!agenceId) {
+    return res.status(400).json({
+      success: false,
+      message: 'ID d\'agence manquant'
+    });
+  }
   
   const agence = await Agence.findById(agenceId);
   
@@ -130,8 +151,15 @@ const generateApiKey = asyncHandler(async (req, res) => {
 // @route   POST /api/parametres/backup
 // @access  Private/Agency
 const triggerBackup = asyncHandler(async (req, res) => {
-  // In a real app, get agenceId from authenticated user
-  const agenceId = req.user?.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
+  // Get agenceId from authenticated user
+  const agenceId = req.user?.agenceId;
+  
+  if (!agenceId) {
+    return res.status(400).json({
+      success: false,
+      message: 'ID d\'agence manquant'
+    });
+  }
   
   const agence = await Agence.findById(agenceId);
   

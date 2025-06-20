@@ -34,6 +34,11 @@ const userSchema = mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Agence',
     },
+    // Liste des agences pour les agents multi-agences
+    agences: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Agence',
+    }],
     permissions: [
       {
         module: {

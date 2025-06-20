@@ -14,7 +14,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHeaderCell, TableCell } f
 import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
-import { Ticket } from '../../types';
+import { Ticket, TicketReponse } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { ticketsAPI } from '../../services/api';
 
@@ -62,21 +62,27 @@ const TicketsListPage: React.FC = () => {
     if (!selectedTicket || !response.trim()) return;
 
     try {
-      // Update ticket with response
-      await ticketsAPI.update(selectedTicket.id, {
-        ...selectedTicket,
-        statut: 'en_cours'
-      });
+      // Send reply to ticket
+      const replyResponse = await ticketsAPI.reply(selectedTicket.id, response);
       
-      // Update local state
-      setTickets(prev => prev.map(ticket => 
-        ticket.id === selectedTicket.id 
-          ? { ...ticket, statut: 'en_cours', dateMAJ: new Date().toISOString() }
-          : ticket
-      ));
-      
-      setResponse('');
-      setShowDetailModal(false);
+      if (replyResponse.data.success) {
+        // Update local state
+        setTickets(prev => prev.map(ticket => 
+          ticket.id === selectedTicket.id 
+            ? { 
+                ...ticket, 
+                statut: replyResponse.data.data.statut, 
+                dateMAJ: replyResponse.data.data.dateMAJ,
+                reponses: replyResponse.data.data.reponses
+              }
+            : ticket
+        ));
+        
+        setResponse('');
+        setShowDetailModal(false);
+      } else {
+        throw new Error(replyResponse.data.message || 'Failed to send reply');
+      }
     } catch (error) {
       console.error('Erreur lors de l\'envoi de la réponse:', error);
     }
@@ -414,6 +420,35 @@ const TicketsListPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Réponses */}
+            {selectedTicket.reponses && selectedTicket.reponses.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Conversation
+                </label>
+                <div className="space-y-4">
+                  {selectedTicket.reponses.map((reponse, index) => (
+                    <div 
+                      key={index} 
+                      className={`p-4 rounded-lg ${
+                        reponse.userRole === 'superadmin' 
+                          ? 'bg-blue-50 ml-8' 
+                          : 'bg-gray-50 mr-8'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <p className="font-medium text-gray-900">{reponse.userName}</p>
+                        <span className="text-xs text-gray-500">
+                          {new Date(reponse.date).toLocaleString('fr-FR')}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-800">{reponse.message}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {selectedTicket.statut !== 'ferme' && (
               <div>
                 <label htmlFor="response" className="block text-sm font-medium text-gray-700 mb-2">
@@ -446,7 +481,7 @@ const TicketsListPage: React.FC = () => {
                   <button
                     onClick={handleSendResponse}
                     disabled={!response.trim()}
-                    className="btn-primary"
+                    className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Send className="w-4 h-4 mr-2" />
                     Envoyer la réponse

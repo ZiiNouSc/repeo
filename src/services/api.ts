@@ -22,12 +22,14 @@ export const authAPI = {
   register: (data: any) => api.post('/auth/register', data),
   logout: () => api.post('/auth/logout'),
   getCurrentUser: () => api.get('/auth/me'),
+  getUserAgences: () => api.get('/auth/agences'),
 };
 
 // API Agences
 export const agencesAPI = {
   getAll: () => api.get('/agences'),
   getById: (id: string) => api.get(`/agences/${id}`),
+  create: (data: any) => api.post('/agences', data),
   approve: (id: string) => api.put(`/agences/${id}/approve`),
   reject: (id: string) => api.put(`/agences/${id}/reject`),
   suspend: (id: string) => api.put(`/agences/${id}/suspend`),
@@ -113,6 +115,8 @@ export const agentsAPI = {
   delete: (id: string) => api.delete(`/agents/${id}`),
   updatePermissions: (id: string, permissions: any[]) => 
     api.put(`/agents/${id}/permissions`, { permissions }),
+  assignAgencies: (id: string, agences: string[]) =>
+    api.put(`/agents/${id}/agencies`, { agences }),
 };
 
 // API Tickets
@@ -123,6 +127,8 @@ export const ticketsAPI = {
   update: (id: string, data: any) => api.put(`/tickets/${id}`, data),
   updateStatus: (id: string, status: string) => 
     api.put(`/tickets/${id}/status`, { status }),
+  reply: (id: string, message: string) =>
+    api.post(`/tickets/${id}/reply`, { message }),
 };
 
 // API Todos
@@ -170,12 +176,32 @@ export const reservationsAPI = {
   delete: (id: string) => api.delete(`/reservations/${id}`),
 };
 
+// API Profile
+export const profileAPI = {
+  getProfile: () => api.get('/profile'),
+  updateProfile: (data: any) => api.put('/profile', data),
+  updateLogo: (formData: FormData) => api.post('/profile/logo', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  }),
+};
+
+// API Parametres
+export const parametresAPI = {
+  getParametres: () => api.get('/parametres'),
+  updateParametres: (data: any) => api.put('/parametres', data),
+  generateApiKey: () => api.post('/parametres/generate-api-key'),
+  triggerBackup: () => api.post('/parametres/backup'),
+};
+
 // API Module Requests
 export const moduleRequestsAPI = {
   getAll: () => api.get('/module-requests'),
   getAgencyRequests: () => api.get('/module-requests/agency'),
   create: (data: any) => api.post('/module-requests', data),
   process: (id: string, data: any) => api.put(`/module-requests/${id}/process`, data),
+  getPendingAgencies: () => api.get('/module-requests/admin/pending'),
 };
 
 export default api;

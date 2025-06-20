@@ -3,6 +3,7 @@ const router = express.Router();
 const { 
   getAgences, 
   getAgenceById, 
+  createAgence,
   approveAgence, 
   rejectAgence, 
   suspendAgence, 
@@ -15,6 +16,9 @@ router.get('/', protect, admin, getAgences);
 
 // Get agence by ID
 router.get('/:id', protect, admin, getAgenceById);
+
+// Create new agence
+router.post('/', protect, admin, createAgence);
 
 // Approve agence
 router.put('/:id/approve', protect, admin, approveAgence);

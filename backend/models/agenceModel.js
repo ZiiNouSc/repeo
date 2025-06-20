@@ -32,6 +32,11 @@ const agenceSchema = mongoose.Schema(
       type: [String],
       default: [],
     },
+    // Modules demandés par l'agence en attente d'approbation
+    modulesDemandes: {
+      type: [String],
+      default: [],
+    },
     modulesChoisis: {
       type: [String],
       default: [],

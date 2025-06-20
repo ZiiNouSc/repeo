@@ -4,10 +4,11 @@ const {
   getTickets, 
   getTicketById, 
   createTicket, 
+  replyToTicket,
   updateTicketStatus, 
   updateTicket 
 } = require('../controllers/ticketController');
-const { protect, admin, agency } = require('../middlewares/authMiddleware');
+const { protect } = require('../middlewares/authMiddleware');
 
 // Get all tickets
 router.get('/', protect, getTickets);
@@ -16,7 +17,10 @@ router.get('/', protect, getTickets);
 router.get('/:id', protect, getTicketById);
 
 // Create new ticket
-router.post('/', protect, agency, createTicket);
+router.post('/', protect, createTicket);
+
+// Reply to a ticket
+router.post('/:id/reply', protect, replyToTicket);
 
 // Update ticket status
 router.put('/:id/status', protect, updateTicketStatus);

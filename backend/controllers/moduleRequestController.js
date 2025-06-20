@@ -35,8 +35,24 @@ const getModuleRequests = asyncHandler(async (req, res) => {
 // @route   GET /api/module-requests/agency
 // @access  Private/Agency
 const getAgencyModuleRequests = asyncHandler(async (req, res) => {
-  // In a real app, get agenceId from authenticated user
-  const agenceId = req.user?.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
+  // Get agenceId from authenticated user
+  const agenceId = req.user?.agenceId;
+  
+  if (!agenceId) {
+    return res.status(400).json({
+      success: false,
+      message: 'ID d\'agence manquant'
+    });
+  }
+  
+  // Vérifier que l'agence existe
+  const agence = await Agence.findById(agenceId);
+  if (!agence) {
+    return res.status(404).json({
+      success: false,
+      message: 'Agence non trouvée'
+    });
+  }
   
   const moduleRequests = await ModuleRequest.find({ agenceId });
   
@@ -59,8 +75,28 @@ const createModuleRequest = asyncHandler(async (req, res) => {
     });
   }
   
-  // In a real app, get agenceId from authenticated user
-  const agenceId = req.user?.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
+  // Get agenceId from authenticated user
+  const agenceId = req.user?.agenceId;
+  
+  if (!agenceId) {
+    return res.status(400).json({
+      success: false,
+      message: 'ID d\'agence manquant'
+    });
+  }
+  
+  // Vérifier que l'agence existe
+  const agence = await Agence.findById(agenceId);
+  if (!agence) {
+    return res.status(404).json({
+      success: false,
+      message: 'Agence non trouvée'
+    });
+  }
+  
+  // Mettre à jour les modules demandés par l'agence
+  agence.modulesDemandes = [...new Set([...agence.modulesDemandes || [], ...modules])];
+  await agence.save();
   
   const moduleRequest = await ModuleRequest.create({
     agenceId,
@@ -115,6 +151,12 @@ const processModuleRequest = asyncHandler(async (req, res) => {
       );
       
       agence.modulesActifs = [...agence.modulesActifs, ...newModules];
+      
+      // Remove from modulesDemandes
+      agence.modulesDemandes = agence.modulesDemandes.filter(
+        module => !moduleRequest.modules.includes(module)
+      );
+      
       await agence.save();
     }
   }
@@ -126,9 +168,25 @@ const processModuleRequest = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Get agencies with pending module requests
+// @route   GET /api/module-requests/admin/pending
+// @access  Private/Admin
+const getAgenciesWithPendingRequests = asyncHandler(async (req, res) => {
+  // Trouver toutes les agences avec des modules demandés
+  const agences = await Agence.find({ 
+    'modulesDemandes.0': { $exists: true } 
+  });
+  
+  res.status(200).json({
+    success: true,
+    data: agences
+  });
+});
+
 module.exports = {
   getModuleRequests,
   getAgencyModuleRequests,
   createModuleRequest,
-  processModuleRequest
+  processModuleRequest,
+  getAgenciesWithPendingRequests
 };

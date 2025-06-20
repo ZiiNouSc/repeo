@@ -104,7 +104,10 @@ export const usePermissions = () => {
       if (currentAgence.modulesActifs.includes(moduleId)) {
         return 'active';
       }
-      return 'pending';
+      if (currentAgence.modulesDemandes && currentAgence.modulesDemandes.includes(moduleId)) {
+        return 'pending';
+      }
+      return 'inactive';
     }
     
     // For agents

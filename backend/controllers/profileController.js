@@ -7,14 +7,21 @@ const User = require('../models/userModel');
 // @access  Private/Agency
 const getProfile = asyncHandler(async (req, res) => {
   // In a real app, get agenceId from authenticated user
-  const agenceId = req.user?.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
+  const agenceId = req.user?.agenceId;
+  
+  if (!agenceId) {
+    return res.status(400).json({
+      success: false,
+      message: 'ID d\'agence manquant'
+    });
+  }
   
   const agence = await Agence.findById(agenceId);
   
   if (!agence) {
     return res.status(404).json({
       success: false,
-      message: 'Profil non trouvé'
+      message: 'Agence non trouvée'
     });
   }
   
@@ -53,14 +60,21 @@ const getProfile = asyncHandler(async (req, res) => {
 // @access  Private/Agency
 const updateProfile = asyncHandler(async (req, res) => {
   // In a real app, get agenceId from authenticated user
-  const agenceId = req.user?.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
+  const agenceId = req.user?.agenceId;
+  
+  if (!agenceId) {
+    return res.status(400).json({
+      success: false,
+      message: 'ID d\'agence manquant'
+    });
+  }
   
   const agence = await Agence.findById(agenceId);
   
   if (!agence) {
     return res.status(404).json({
       success: false,
-      message: 'Profil non trouvé'
+      message: 'Agence non trouvée'
     });
   }
   
@@ -127,7 +141,14 @@ const updateProfile = asyncHandler(async (req, res) => {
 const updateLogo = asyncHandler(async (req, res) => {
   // In a real app, handle file upload
   // For now, we'll just update the logo URL
-  const agenceId = req.user?.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
+  const agenceId = req.user?.agenceId;
+  
+  if (!agenceId) {
+    return res.status(400).json({
+      success: false,
+      message: 'ID d\'agence manquant'
+    });
+  }
   
   const agence = await Agence.findById(agenceId);
   

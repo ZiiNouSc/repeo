@@ -20,7 +20,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
-import axios from 'axios';
+import { moduleRequestsAPI } from '../../services/api';
 
 interface ModuleRequest {
   id: string;
@@ -64,7 +64,7 @@ const ModuleRequestPage: React.FC = () => {
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/module-requests/agency');
+      const response = await moduleRequestsAPI.getAgencyRequests();
       
       if (response.data.success) {
         setRequests(response.data.data);
@@ -96,7 +96,7 @@ const ModuleRequestPage: React.FC = () => {
     
     setSubmitting(true);
     try {
-      const response = await axios.post('/api/module-requests', {
+      const response = await moduleRequestsAPI.create({
         modules: selectedModules,
         message
       });
@@ -168,6 +168,27 @@ const ModuleRequestPage: React.FC = () => {
             <p className="col-span-full text-gray-500">Aucun module actif pour le moment</p>
           )}
         </div>
+
+        {/* Modules en attente */}
+        {currentAgence?.modulesDemandes && currentAgence.modulesDemandes.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-md font-semibold text-gray-900 mb-3">Modules en attente d'approbation</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {currentAgence.modulesDemandes.map(moduleId => {
+                const module = availableModules.find(m => m.id === moduleId);
+                if (!module) return null;
+                
+                const Icon = module.icon;
+                return (
+                  <div key={moduleId} className="flex items-center p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <Icon className="w-5 h-5 text-yellow-600 mr-3" />
+                    <span className="text-sm font-medium text-yellow-800">{module.name}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* New request form */}
@@ -181,8 +202,9 @@ const ModuleRequestPage: React.FC = () => {
             </label>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {availableModules.map(module => {
-                // Skip modules that are already active
-                if (currentAgence?.modulesActifs?.includes(module.id)) {
+                // Skip modules that are already active or pending
+                if (currentAgence?.modulesActifs?.includes(module.id) || 
+                    currentAgence?.modulesDemandes?.includes(module.id)) {
                   return null;
                 }
                 
@@ -237,7 +259,7 @@ const ModuleRequestPage: React.FC = () => {
             <button
               onClick={handleSubmit}
               disabled={selectedModules.length === 0 || !message.trim() || submitting}
-              className="btn-primary flex items-center"
+              className="btn-primary flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? (
                 <LoadingSpinner size="sm" className="mr-2" />

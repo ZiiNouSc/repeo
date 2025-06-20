@@ -24,7 +24,7 @@ import Modal from '../../components/ui/Modal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import Card from '../../components/ui/Card';
 import SearchFilter from '../../components/ui/SearchFilter';
-import axios from 'axios';
+import { moduleRequestsAPI } from '../../services/api';
 
 interface ModuleRequest {
   id: string;
@@ -89,7 +89,7 @@ const ModuleRequestsPage: React.FC = () => {
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/module-requests');
+      const response = await moduleRequestsAPI.getAll();
       
       if (response.data.success) {
         setRequests(response.data.data);
@@ -108,7 +108,7 @@ const ModuleRequestsPage: React.FC = () => {
     
     setProcessing(true);
     try {
-      const response = await axios.put(`/api/module-requests/${selectedRequest.id}/process`, {
+      const response = await moduleRequestsAPI.process(selectedRequest.id, {
         statut: approved ? 'approuve' : 'rejete',
         commentaireAdmin: adminComment
       });

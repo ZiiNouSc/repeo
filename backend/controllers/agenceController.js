@@ -33,6 +33,67 @@ const getAgenceById = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Create new agency
+// @route   POST /api/agences
+// @access  Private/Admin
+const createAgence = asyncHandler(async (req, res) => {
+  const { 
+    nom, 
+    email, 
+    telephone, 
+    adresse, 
+    typeActivite, 
+    siret, 
+    modulesActifs = [],
+    password = 'password123' // Mot de passe par défaut
+  } = req.body;
+
+  if (!nom || !email || !telephone || !adresse) {
+    return res.status(400).json({
+      success: false,
+      message: 'Informations manquantes'
+    });
+  }
+
+  // Vérifier si l'email est déjà utilisé
+  const emailExists = await User.findOne({ email });
+  if (emailExists) {
+    return res.status(400).json({
+      success: false,
+      message: 'Cet email est déjà utilisé'
+    });
+  }
+
+  // Créer l'agence
+  const agence = await Agence.create({
+    nom,
+    email,
+    telephone,
+    adresse,
+    statut: 'approuve', // Approuvée par défaut car créée par un admin
+    modulesActifs,
+    typeActivite,
+    siret
+  });
+
+  // Créer l'utilisateur associé
+  const user = await User.create({
+    email,
+    password,
+    nom,
+    prenom: '',
+    role: 'agence',
+    statut: 'actif',
+    agenceId: agence._id
+  });
+
+  res.status(201).json({
+    success: true,
+    message: 'Agence créée avec succès',
+    data: agence
+  });
+});
+
 // @desc    Approve agency
 // @route   PUT /api/agences/:id/approve
 // @access  Private/Admin
@@ -40,6 +101,14 @@ const approveAgence = asyncHandler(async (req, res) => {
   const agence = await Agence.findById(req.params.id);
   
   if (agence) {
+    // Déplacer les modules demandés vers les modules actifs
+    if (agence.modulesDemandes && agence.modulesDemandes.length > 0) {
+      // Fusionner les modules demandés avec les modules actifs existants (s'il y en a)
+      const newModulesActifs = [...new Set([...agence.modulesActifs, ...agence.modulesDemandes])];
+      agence.modulesActifs = newModulesActifs;
+      agence.modulesDemandes = []; // Vider les modules demandés
+    }
+    
     agence.statut = 'approuve';
     const updatedAgence = await agence.save();
     
@@ -158,6 +227,7 @@ const updateAgenceModules = asyncHandler(async (req, res) => {
 module.exports = {
   getAgences,
   getAgenceById,
+  createAgence,
   approveAgence,
   rejectAgence,
   suspendAgence,

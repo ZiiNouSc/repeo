@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const Agent = require('../models/agentModel');
 const User = require('../models/userModel');
+const Agence = require('../models/agenceModel');
 const bcrypt = require('bcryptjs');
 
 // @desc    Get all agents
@@ -8,7 +9,14 @@ const bcrypt = require('bcryptjs');
 // @access  Private/Agency
 const getAgents = asyncHandler(async (req, res) => {
   // Get agenceId from authenticated user
-  const agenceId = req.user?.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
+  const agenceId = req.user?.agenceId;
+  
+  if (!agenceId) {
+    return res.status(400).json({
+      success: false,
+      message: 'ID d\'agence manquant'
+    });
+  }
   
   const agents = await Agent.find({ agenceId });
   
@@ -36,7 +44,8 @@ const getAgents = asyncHandler(async (req, res) => {
 const getAgentById = asyncHandler(async (req, res) => {
   const agent = await Agent.findById(req.params.id);
   
-  if (agent) {
+  // Vérifier que l'agent appartient à l'agence de l'utilisateur connecté
+  if (agent && agent.agenceId.toString() === req.user.agenceId.toString()) {
     // Format response to match frontend expectations
     const formattedAgent = {
       id: agent._id,
@@ -84,7 +93,35 @@ const createAgent = asyncHandler(async (req, res) => {
   }
   
   // Get agenceId from authenticated user
-  const agenceId = req.user?.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
+  const agenceId = req.user?.agenceId;
+  
+  if (!agenceId) {
+    return res.status(400).json({
+      success: false,
+      message: 'ID d\'agence manquant'
+    });
+  }
+  
+  // Vérifier que l'agence existe
+  const agence = await Agence.findById(agenceId);
+  if (!agence) {
+    return res.status(404).json({
+      success: false,
+      message: 'Agence non trouvée'
+    });
+  }
+  
+  // Vérifier que les modules demandés sont bien actifs pour l'agence
+  if (permissions && permissions.length > 0) {
+    for (const perm of permissions) {
+      if (!agence.modulesActifs.includes(perm.module)) {
+        return res.status(400).json({
+          success: false,
+          message: `Le module "${perm.module}" n'est pas actif pour votre agence`
+        });
+      }
+    }
+  }
   
   const agent = await Agent.create({
     nom,
@@ -104,6 +141,7 @@ const createAgent = asyncHandler(async (req, res) => {
     prenom,
     role: 'agent',
     agenceId,
+    agences: [agenceId], // Ajouter l'agence à la liste des agences de l'agent
     statut,
     permissions
   });
@@ -142,7 +180,8 @@ const updateAgent = asyncHandler(async (req, res) => {
   
   const agent = await Agent.findById(req.params.id);
   
-  if (agent) {
+  // Vérifier que l'agent appartient à l'agence de l'utilisateur connecté
+  if (agent && agent.agenceId.toString() === req.user.agenceId.toString()) {
     // Check if email already exists (except for this agent)
     if (email !== agent.email) {
       const existingAgent = await Agent.findOne({ email });
@@ -212,7 +251,27 @@ const updateAgentPermissions = asyncHandler(async (req, res) => {
   
   const agent = await Agent.findById(req.params.id);
   
-  if (agent) {
+  // Vérifier que l'agent appartient à l'agence de l'utilisateur connecté
+  if (agent && agent.agenceId.toString() === req.user.agenceId.toString()) {
+    // Vérifier que l'agence existe
+    const agence = await Agence.findById(req.user.agenceId);
+    if (!agence) {
+      return res.status(404).json({
+        success: false,
+        message: 'Agence non trouvée'
+      });
+    }
+    
+    // Vérifier que les modules demandés sont bien actifs pour l'agence
+    for (const perm of permissions) {
+      if (!agence.modulesActifs.includes(perm.module)) {
+        return res.status(400).json({
+          success: false,
+          message: `Le module "${perm.module}" n'est pas actif pour votre agence`
+        });
+      }
+    }
+    
     agent.permissions = permissions;
     const updatedAgent = await agent.save();
     
@@ -248,13 +307,59 @@ const updateAgentPermissions = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Assign agent to agencies
+// @route   PUT /api/agents/:id/agencies
+// @access  Private/Agency
+const assignAgentToAgencies = asyncHandler(async (req, res) => {
+  const { agences } = req.body;
+  
+  if (!agences || !Array.isArray(agences)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Liste d\'agences manquante ou invalide'
+    });
+  }
+  
+  const agent = await Agent.findById(req.params.id);
+  
+  // Vérifier que l'agent appartient à l'agence de l'utilisateur connecté
+  if (agent && agent.agenceId.toString() === req.user.agenceId.toString()) {
+    // Mettre à jour l'utilisateur associé
+    const user = await User.findOne({ email: agent.email });
+    if (user) {
+      user.agences = agences;
+      await user.save();
+      
+      res.status(200).json({
+        success: true,
+        message: 'Agences attribuées avec succès',
+        data: {
+          id: agent._id,
+          agences: agences
+        }
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: 'Utilisateur associé non trouvé'
+      });
+    }
+  } else {
+    res.status(404).json({
+      success: false,
+      message: 'Agent non trouvé'
+    });
+  }
+});
+
 // @desc    Delete agent
 // @route   DELETE /api/agents/:id
 // @access  Private/Agency
 const deleteAgent = asyncHandler(async (req, res) => {
   const agent = await Agent.findById(req.params.id);
   
-  if (agent) {
+  // Vérifier que l'agent appartient à l'agence de l'utilisateur connecté
+  if (agent && agent.agenceId.toString() === req.user.agenceId.toString()) {
     // Delete agent
     await Agent.deleteOne({ _id: agent._id });
     
@@ -279,5 +384,6 @@ module.exports = {
   createAgent,
   updateAgent,
   updateAgentPermissions,
+  assignAgentToAgencies,
   deleteAgent
 };

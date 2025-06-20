@@ -1,5 +1,22 @@
 const mongoose = require('mongoose');
 
+const reponseSchema = mongoose.Schema({
+  message: {
+    type: String,
+    required: true
+  },
+  date: {
+    type: Date,
+    default: Date.now
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  userName: String,
+  userRole: String
+});
+
 const ticketSchema = mongoose.Schema(
   {
     agenceId: {
@@ -33,20 +50,7 @@ const ticketSchema = mongoose.Schema(
       type: Date,
       default: Date.now,
     },
-    reponses: [
-      {
-        message: String,
-        date: {
-          type: Date,
-          default: Date.now,
-        },
-        userId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'User',
-        },
-        userName: String,
-      },
-    ],
+    reponses: [reponseSchema],
   },
   {
     timestamps: true,

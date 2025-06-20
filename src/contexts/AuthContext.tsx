@@ -42,23 +42,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const userData = JSON.parse(savedUser);
         setUser(userData);
         
-        // If user is an agency admin, fetch their agencies
-        if (userData.role === 'agence') {
+        // If user is an agency admin or agent, fetch their agencies
+        if (userData.role === 'agence' || userData.role === 'agent') {
           fetchUserAgences(userData).then(agences => {
-            setUserAgences(agences);
-            
-            // Set current agency
-            if (savedAgenceId && agences.some(a => a.id === savedAgenceId)) {
-              const currentAgence = agences.find(a => a.id === savedAgenceId) || null;
-              setCurrentAgence(currentAgence);
-            } else if (agences.length > 0) {
-              setCurrentAgence(agences[0]);
-              localStorage.setItem('samtech_current_agence', agences[0].id);
-            }
-          });
-        } else if (userData.role === 'agent') {
-          // For agents, fetch their assigned agencies
-          fetchAgentAgences(userData).then(agences => {
             setUserAgences(agences);
             
             // Set current agency
@@ -82,43 +68,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const fetchUserAgences = async (userData: User): Promise<Agence[]> => {
     try {
-      // In a real app, this would be an API call to get the user's agencies
-      // For now, we'll use mock data
-      return [
-        {
-          id: '1',
-          nom: 'Voyages Express',
-          email: 'contact@voyages-express.com',
-          telephone: '+33 1 23 45 67 89',
-          adresse: '123 Rue de la Paix, 75001 Paris',
-          statut: 'en_attente',
-          dateInscription: '2024-01-15T00:00:00.000Z',
-          modulesActifs: []
-        },
-        {
-          id: '2',
-          nom: 'Tourisme International',
-          email: 'info@tourisme-intl.com',
-          telephone: '+33 1 98 76 54 32',
-          adresse: '456 Avenue des Voyages, 69002 Lyon',
-          statut: 'approuve',
-          dateInscription: '2024-01-10T00:00:00.000Z',
-          modulesActifs: ['clients', 'factures', 'packages', 'billets']
-        }
-      ];
+      // Fetch user's agencies from API
+      const response = await axios.get('/api/auth/agences');
+      
+      if (response.data.success) {
+        return response.data.data || [];
+      } else {
+        throw new Error(response.data.message || 'Failed to fetch user agencies');
+      }
     } catch (error) {
       console.error('Error fetching user agencies:', error);
-      return [];
-    }
-  };
-
-  const fetchAgentAgences = async (userData: User): Promise<Agence[]> => {
-    try {
-      // In a real app, this would be an API call to get the agent's assigned agencies
-      const response = await axios.get('/api/user/agences');
-      return response.data.data || [];
-    } catch (error) {
-      console.error('Error fetching agent agencies:', error);
+      
+      // Fallback to user.agences if API call fails
+      if (userData.agences && Array.isArray(userData.agences)) {
+        return userData.agences;
+      }
+      
       return [];
     }
   };
@@ -134,23 +99,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(userData);
         localStorage.setItem('samtech_user', JSON.stringify(userData));
         
-        // If user is an agency admin, fetch their agencies
-        if (userData.role === 'agence') {
-          const agences = await fetchUserAgences(userData);
-          setUserAgences(agences);
+        // Set user agencies
+        if (userData.agences && Array.isArray(userData.agences)) {
+          setUserAgences(userData.agences);
           
-          if (agences.length > 0) {
-            setCurrentAgence(agences[0]);
-            localStorage.setItem('samtech_current_agence', agences[0].id);
-          }
-        } else if (userData.role === 'agent') {
-          // For agents, fetch their assigned agencies
-          const agences = await fetchAgentAgences(userData);
-          setUserAgences(agences);
-          
-          if (agences.length > 0) {
-            setCurrentAgence(agences[0]);
-            localStorage.setItem('samtech_current_agence', agences[0].id);
+          if (userData.agences.length > 0) {
+            setCurrentAgence(userData.agences[0]);
+            localStorage.setItem('samtech_current_agence', userData.agences[0].id);
           }
         }
       } else {

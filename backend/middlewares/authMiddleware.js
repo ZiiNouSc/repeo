@@ -7,10 +7,14 @@ const Agence = require('../models/agenceModel');
 const protect = asyncHandler(async (req, res, next) => {
   // For development only - allow all requests without token
   if (process.env.NODE_ENV === 'development') {
-    req.user = {
-      _id: '60d0fe4f5311236168a109ca',
-      role: 'superadmin'
-    };
+    // Simuler un utilisateur superadmin pour le développement
+    req.user = await User.findOne({ role: 'superadmin' });
+    if (!req.user) {
+      req.user = {
+        _id: '60d0fe4f5311236168a109ca',
+        role: 'superadmin'
+      };
+    }
     return next();
   }
   

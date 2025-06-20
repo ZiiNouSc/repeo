@@ -4,7 +4,8 @@ const {
   getModuleRequests, 
   getAgencyModuleRequests, 
   createModuleRequest, 
-  processModuleRequest 
+  processModuleRequest,
+  getAgenciesWithPendingRequests
 } = require('../controllers/moduleRequestController');
 const { protect, admin, agency } = require('../middlewares/authMiddleware');
 
@@ -19,5 +20,8 @@ router.post('/', protect, agency, createModuleRequest);
 
 // Process module request (approve/reject)
 router.put('/:id/process', protect, admin, processModuleRequest);
+
+// Get agencies with pending module requests
+router.get('/admin/pending', protect, admin, getAgenciesWithPendingRequests);
 
 module.exports = router;

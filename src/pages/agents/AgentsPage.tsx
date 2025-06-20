@@ -80,6 +80,11 @@ const AgentsPage: React.FC = () => {
     { id: 'calendrier', name: 'Calendrier', description: 'Gestion du calendrier' }
   ];
 
+  // Filtrer les modules disponibles en fonction des modules actifs de l'agence
+  const filteredModules = availableModules.filter(module => 
+    currentAgence?.modulesActifs?.includes(module.id)
+  );
+
   const availableActions = ['lire', 'creer', 'modifier', 'supprimer'];
 
   useEffect(() => {
@@ -111,6 +116,7 @@ const AgentsPage: React.FC = () => {
       resetForm();
     } catch (error) {
       console.error('Erreur lors de l\'ajout:', error);
+      alert('Erreur lors de la création de l\'agent: ' + (error.response?.data?.message || 'Erreur inconnue'));
     }
   };
 
@@ -148,6 +154,7 @@ const AgentsPage: React.FC = () => {
       resetForm();
     } catch (error) {
       console.error('Erreur lors de la mise à jour des permissions:', error);
+      alert('Erreur: ' + (error.response?.data?.message || 'Erreur inconnue'));
     }
   };
 
@@ -155,8 +162,13 @@ const AgentsPage: React.FC = () => {
     if (!selectedAgent) return;
 
     try {
-      // In a real implementation, you would update the agent's agency assignment
-      // For now, we'll just close the modal
+      // Get selected agencies from form
+      const selectedAgencies = userAgences
+        .filter(agence => document.getElementById(`agence-${agence.id}`)?.checked)
+        .map(agence => agence.id);
+      
+      await agentsAPI.assignAgencies(selectedAgent.id, selectedAgencies);
+      
       setShowAgencyAssignModal(false);
       setSelectedAgent(null);
     } catch (error) {
@@ -297,8 +309,8 @@ const AgentsPage: React.FC = () => {
       <div className="mb-4">
         <p className="text-sm font-medium text-gray-700 mb-2">Permissions:</p>
         <div className="flex flex-wrap gap-1">
-          {agent.permissions.slice(0, 3).map((permission) => (
-            <Badge key={permission.module} variant="info" size="sm">
+          {agent.permissions.slice(0, 3).map((permission, index) => (
+            <Badge key={`${permission.module}-${index}`} variant="info" size="sm">
               {permission.module}
             </Badge>
           ))}
@@ -481,8 +493,8 @@ const AgentsPage: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {agent.permissions.slice(0, 3).map((permission) => (
-                        <Badge key={permission.module} variant="info" size="sm">
+                      {agent.permissions.slice(0, 3).map((permission, index) => (
+                        <Badge key={`${permission.module}-${index}`} variant="info" size="sm">
                           {permission.module}
                         </Badge>
                       ))}
@@ -788,7 +800,7 @@ const AgentsPage: React.FC = () => {
             </div>
             
             <div className="space-y-6">
-              {availableModules.map((module) => (
+              {filteredModules.map((module) => (
                 <div key={module.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div>
@@ -954,14 +966,14 @@ const AgentsPage: React.FC = () => {
                 Permissions
               </label>
               <div className="space-y-3">
-                {selectedAgent.permissions.map((permission) => (
-                  <div key={permission.module} className="bg-gray-50 rounded-lg p-3">
+                {selectedAgent.permissions.map((permission, index) => (
+                  <div key={`${permission.module}-${index}`} className="bg-gray-50 rounded-lg p-3">
                     <h4 className="font-medium text-gray-900 mb-2 capitalize">
                       {permission.module}
                     </h4>
                     <div className="flex flex-wrap gap-2">
-                      {permission.actions.map((action) => (
-                        <Badge key={action} variant="info" size="sm">
+                      {permission.actions.map((action, actionIndex) => (
+                        <Badge key={`${action}-${actionIndex}`} variant="info" size="sm">
                           {action}
                         </Badge>
                       ))}
