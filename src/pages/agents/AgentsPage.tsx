@@ -49,7 +49,8 @@ const AgentsPage: React.FC = () => {
     email: '',
     telephone: '',
     permissions: [] as Permission[],
-    agenceId: currentAgence?.id || ''
+    agenceId: currentAgence?.id || '',
+    password: 'password123'
   });
 
   const filterOptions = [
@@ -183,13 +184,15 @@ const AgentsPage: React.FC = () => {
       email: '',
       telephone: '',
       permissions: [],
-      agenceId: currentAgence?.id || ''
+      agenceId: currentAgence?.id || '',
+      password: 'password123'
     });
   };
 
   const openPermissionsModal = (agent: Agent) => {
     setSelectedAgent(agent);
     setFormData({
+      ...formData,
       nom: agent.nom,
       prenom: agent.prenom,
       email: agent.email,
@@ -705,6 +708,21 @@ const AgentsPage: React.FC = () => {
               value={formData.telephone}
               onChange={(e) => setFormData(prev => ({ ...prev, telephone: e.target.value }))}
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Mot de passe
+            </label>
+            <input
+              type="password"
+              className="input-field"
+              value={formData.password}
+              onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Laissez vide pour générer un mot de passe aléatoire
+            </p>
           </div>
 
           {userAgences.length > 1 && (

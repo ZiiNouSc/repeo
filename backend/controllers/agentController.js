@@ -7,8 +7,10 @@ const bcrypt = require('bcryptjs');
 // @route   GET /api/agents
 // @access  Private/Agency
 const getAgents = asyncHandler(async (req, res) => {
-  // In a real app, filter by agency ID from authenticated user
-  const agents = await Agent.find({});
+  // Get agenceId from authenticated user
+  const agenceId = req.user?.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
+  
+  const agents = await Agent.find({ agenceId });
   
   // Format response to match frontend expectations
   const formattedAgents = agents.map(agent => ({
@@ -63,7 +65,7 @@ const getAgentById = asyncHandler(async (req, res) => {
 // @route   POST /api/agents
 // @access  Private/Agency
 const createAgent = asyncHandler(async (req, res) => {
-  const { nom, prenom, email, telephone, permissions = [], statut = 'actif', agenceId, password = 'password123' } = req.body;
+  const { nom, prenom, email, telephone, permissions = [], statut = 'actif', password = 'password123' } = req.body;
   
   if (!nom || !prenom || !email) {
     return res.status(400).json({
@@ -81,8 +83,8 @@ const createAgent = asyncHandler(async (req, res) => {
     });
   }
   
-  // Get agenceId from authenticated user or from request body
-  const effectiveAgenceId = agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
+  // Get agenceId from authenticated user
+  const agenceId = req.user?.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
   
   const agent = await Agent.create({
     nom,
@@ -91,20 +93,17 @@ const createAgent = asyncHandler(async (req, res) => {
     telephone: telephone || '',
     permissions,
     statut,
-    agenceId: effectiveAgenceId
+    agenceId
   });
   
   // Create user account for agent
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
-  
   const user = await User.create({
     email,
-    password: hashedPassword,
+    password, // Will be hashed by the pre-save hook
     nom,
     prenom,
     role: 'agent',
-    agenceId: effectiveAgenceId,
+    agenceId,
     statut,
     permissions
   });
@@ -256,6 +255,7 @@ const deleteAgent = asyncHandler(async (req, res) => {
   const agent = await Agent.findById(req.params.id);
   
   if (agent) {
+    // Delete agent
     await Agent.deleteOne({ _id: agent._id });
     
     // Remove user account

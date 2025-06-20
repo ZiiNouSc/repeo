@@ -34,6 +34,7 @@ import SituationPage from './pages/situation/SituationPage';
 import VitrinePage from './pages/vitrine/VitrinePage';
 import AgentsPage from './pages/agents/AgentsPage';
 import ParametresPage from './pages/parametres/ParametresPage';
+import ModuleRequestPage from './pages/parametres/ModuleRequestPage';
 import LoadingSpinner from './components/ui/LoadingSpinner';
 
 // Composant pour protéger les routes
@@ -113,6 +114,7 @@ const AppRoutes: React.FC = () => {
         <Route path="vitrine" element={<VitrinePage />} />
         <Route path="agents" element={<AgentsPage />} />
         <Route path="parametres" element={<ParametresPage />} />
+        <Route path="parametres/modules" element={<ModuleRequestPage />} />
       </Route>
       
       {/* Redirection par défaut */}

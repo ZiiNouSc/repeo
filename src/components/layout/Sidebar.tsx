@@ -28,7 +28,8 @@ import {
   Bell,
   Shield,
   FileBarChart2,
-  Layers
+  Layers,
+  PlusCircle
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -76,6 +77,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
     { id: 'agents', label: 'Agents', icon: UserCheck, path: '/agents', roles: ['agence'] },
     { id: 'logs', label: 'Logs', icon: Layers, path: '/logs' },
     { id: 'parametres', label: 'Paramètres', icon: Settings, path: '/parametres' },
+    { id: 'module-requests', label: 'Demande de modules', icon: PlusCircle, path: '/parametres/modules', roles: ['agence'] },
   ];
 
   const visibleItems = menuItems.filter(item => {
@@ -88,6 +90,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
     if (item.id === 'dashboard') return true;
     if (item.id === 'profile') return user?.role === 'agence';
     if (item.roles?.includes('superadmin')) return user?.role === 'superadmin';
+    if (item.id === 'module-requests') return user?.role === 'agence';
     
     return accessibleModules.includes(item.id);
   });
@@ -96,6 +99,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
     if (moduleId === 'dashboard' || moduleId === 'profile') return 'active';
     if (user?.role === 'superadmin') return 'active';
     if (user?.role === 'agence') return 'active';
+    if (moduleId === 'module-requests') return 'active';
     
     return accessibleModules.includes(moduleId) ? 'active' : 'pending';
   };
@@ -121,7 +125,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
       ['documents', 'todos', 'calendrier', 'notifications', 'vitrine'].includes(item.id)
     ),
     parametres: visibleItems.filter(item => 
-      ['agents', 'logs', 'parametres'].includes(item.id)
+      ['agents', 'logs', 'parametres', 'module-requests'].includes(item.id)
     )
   };
 

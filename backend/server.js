@@ -38,6 +38,7 @@ const calendrierRoutes = require('./routes/calendrier');
 const logsRoutes = require('./routes/logs');
 const permissionsRoutes = require('./routes/permissions');
 const auditRoutes = require('./routes/audit');
+const moduleRequestsRoutes = require('./routes/moduleRequests');
 
 // Initialize express app
 const app = express();
@@ -74,6 +75,7 @@ app.use('/api/calendrier', calendrierRoutes);
 app.use('/api/logs', logsRoutes);
 app.use('/api/permissions', permissionsRoutes);
 app.use('/api/audit', auditRoutes);
+app.use('/api/module-requests', moduleRequestsRoutes);
 
 // Placeholder for PDF generation
 app.get('/api/factures/:id/pdf', (req, res) => {

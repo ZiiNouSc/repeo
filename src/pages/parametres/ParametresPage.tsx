@@ -10,8 +10,10 @@ import {
   Globe,
   CreditCard,
   Users,
-  RefreshCw
+  RefreshCw,
+  PlusCircle
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import Badge from '../../components/ui/Badge';
@@ -236,6 +238,22 @@ const ParametresPage: React.FC = () => {
                 <option value="CHF">CHF</option>
               </select>
             </div>
+
+            {user?.role === 'agence' && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center mb-2">
+                  <PlusCircle className="w-5 h-5 text-blue-600 mr-2" />
+                  <h3 className="font-medium text-blue-900">Besoin de plus de fonctionnalités ?</h3>
+                </div>
+                <p className="text-sm text-blue-700 mb-3">
+                  Vous pouvez demander l'activation de modules supplémentaires pour votre agence.
+                </p>
+                <Link to="/parametres/modules" className="btn-primary inline-flex">
+                  <PlusCircle className="w-4 h-4 mr-2" />
+                  Demander des modules
+                </Link>
+              </div>
+            )}
           </div>
         );
 
@@ -607,6 +625,16 @@ const ParametresPage: React.FC = () => {
                 </button>
               );
             })}
+
+            {user?.role === 'agence' && (
+              <Link
+                to="/parametres/modules"
+                className="w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              >
+                <PlusCircle className="w-5 h-5 mr-3" />
+                Demande de modules
+              </Link>
+            )}
           </nav>
         </div>
 

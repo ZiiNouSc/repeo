@@ -18,10 +18,10 @@ api.interceptors.request.use((config) => {
 
 // API Auth
 export const authAPI = {
-  login: (email: string, password: string) => api.post('/login', { email, password }),
-  register: (data: any) => api.post('/register', data),
-  logout: () => api.post('/logout'),
-  getCurrentUser: () => api.get('/me'),
+  login: (email: string, password: string) => api.post('/auth/login', { email, password }),
+  register: (data: any) => api.post('/auth/register', data),
+  logout: () => api.post('/auth/logout'),
+  getCurrentUser: () => api.get('/auth/me'),
 };
 
 // API Agences
@@ -168,6 +168,14 @@ export const reservationsAPI = {
   updateStatus: (id: string, status: string) => 
     api.put(`/reservations/${id}/status`, { status }),
   delete: (id: string) => api.delete(`/reservations/${id}`),
+};
+
+// API Module Requests
+export const moduleRequestsAPI = {
+  getAll: () => api.get('/module-requests'),
+  getAgencyRequests: () => api.get('/module-requests/agency'),
+  create: (data: any) => api.post('/module-requests', data),
+  process: (id: string, data: any) => api.put(`/module-requests/${id}/process`, data),
 };
 
 export default api;
