@@ -1,12 +1,62 @@
 const express = require('express');
 const router = express.Router();
-const { readData, writeData, generateId, formatDate } = require('../utils/dataHelper');
+const { protect, admin } = require('../middlewares/authMiddleware');
 
 // Get all logs
-router.get('/', (req, res) => {
+router.get('/', protect, admin, (req, res) => {
   try {
     // In a real app, you would filter logs by user/agence
-    const logs = readData('logs') || [];
+    const logs = [
+      {
+        id: '1',
+        timestamp: '2024-01-15T14:30:00Z',
+        level: 'info',
+        action: 'LOGIN',
+        description: 'Connexion utilisateur réussie',
+        userId: '1',
+        userName: 'Sophie Martin',
+        ipAddress: '192.168.1.100',
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        details: { loginMethod: 'email', sessionId: 'sess_123456' }
+      },
+      {
+        id: '2',
+        timestamp: '2024-01-15T14:25:00Z',
+        level: 'success',
+        action: 'FACTURE_CREATED',
+        description: 'Nouvelle facture créée: FAC-2024-001',
+        userId: '2',
+        userName: 'Jean Dubois',
+        ipAddress: '192.168.1.101',
+        details: { factureId: 'FAC-2024-001', montant: 1200.00, clientId: '1' }
+      },
+      {
+        id: '3',
+        timestamp: '2024-01-15T14:20:00Z',
+        level: 'warning',
+        action: 'FAILED_LOGIN',
+        description: 'Tentative de connexion échouée',
+        ipAddress: '192.168.1.102',
+        userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+        details: { email: 'test@example.com', reason: 'invalid_password', attempts: 3 }
+      },
+      {
+        id: '4',
+        timestamp: '2024-01-15T14:15:00Z',
+        level: 'error',
+        action: 'PAYMENT_FAILED',
+        description: 'Échec du traitement du paiement',
+        userId: '3',
+        userName: 'Marie Leroy',
+        ipAddress: '192.168.1.103',
+        details: { 
+          factureId: 'FAC-2024-002', 
+          montant: 850.00, 
+          errorCode: 'CARD_DECLINED',
+          errorMessage: 'Carte bancaire refusée'
+        }
+      }
+    ];
     
     // Apply filters
     const { level, dateFilter, search } = req.query;
@@ -61,17 +111,15 @@ router.get('/', (req, res) => {
 });
 
 // Get log stats
-router.get('/stats', (req, res) => {
+router.get('/stats', protect, admin, (req, res) => {
   try {
-    const logs = readData('logs') || [];
-    
     const stats = {
-      total: logs.length,
-      info: logs.filter(log => log.level === 'info').length,
-      success: logs.filter(log => log.level === 'success').length,
-      warning: logs.filter(log => log.level === 'warning').length,
-      error: logs.filter(log => log.level === 'error').length,
-      avgDuration: logs.reduce((sum, log) => sum + (log.duration || 0), 0) / logs.length || 0
+      total: 8,
+      info: 2,
+      success: 2,
+      warning: 2,
+      error: 2,
+      avgDuration: 185
     };
     
     res.status(200).json({
@@ -87,80 +135,14 @@ router.get('/stats', (req, res) => {
   }
 });
 
-// Create log entry (usually called internally)
-router.post('/', (req, res) => {
-  try {
-    const { 
-      level, 
-      action, 
-      description, 
-      userId, 
-      userName, 
-      userRole, 
-      ipAddress, 
-      userAgent, 
-      success, 
-      duration, 
-      module, 
-      details 
-    } = req.body;
-    
-    if (!level || !action || !description) {
-      return res.status(400).json({
-        success: false,
-        message: 'Informations manquantes'
-      });
-    }
-    
-    const logs = readData('logs') || [];
-    
-    const newLog = {
-      id: generateId(),
-      timestamp: formatDate(new Date()),
-      level,
-      action,
-      description,
-      userId,
-      userName,
-      userRole,
-      ipAddress: ipAddress || req.ip,
-      userAgent,
-      success: success !== undefined ? success : true,
-      duration,
-      module,
-      details
-    };
-    
-    logs.push(newLog);
-    
-    if (writeData('logs', logs)) {
-      res.status(201).json({
-        success: true,
-        message: 'Log créé avec succès',
-        data: newLog
-      });
-    } else {
-      throw new Error('Erreur lors de l\'écriture des données');
-    }
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la création du log',
-      error: error.message
-    });
-  }
-});
-
 // Export logs
-router.get('/export', (req, res) => {
+router.get('/export', protect, admin, (req, res) => {
   try {
-    const logs = readData('logs') || [];
-    
     // In a real app, this would generate a CSV or JSON file
     res.status(200).json({
       success: true,
       message: 'Logs exportés avec succès',
-      data: logs
+      downloadUrl: '/api/logs/download/logs.csv'
     });
   } catch (error) {
     res.status(500).json({

@@ -1,19 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { readData } = require('../utils/dataHelper');
+const { protect, hasPermission } = require('../middlewares/authMiddleware');
 
 // Get financial report
-router.get('/financier', (req, res) => {
+router.get('/financier', protect, hasPermission('rapports', 'lire'), (req, res) => {
   try {
     // In a real app, you would get the agenceId from the authenticated user
-    const agenceId = req.headers['x-agence-id'] || '1'; // Default for testing
+    const agenceId = req.user?.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
     const { period = 'mois', year = new Date().getFullYear() } = req.query;
-    
-    // Get data from various sources
-    const factures = readData('factures');
-    const operations = readData('operations');
-    const clients = readData('clients');
-    const reservations = readData('reservations');
     
     // Calculate financial data
     const data = {
@@ -34,12 +28,8 @@ router.get('/financier', (req, res) => {
         evolution: 14.0
       },
       creances: {
-        total: factures
-          .filter(f => f.statut === 'envoyee' || f.statut === 'en_retard')
-          .reduce((sum, f) => sum + f.montantTTC, 0),
-        enRetard: factures
-          .filter(f => f.statut === 'en_retard')
-          .reduce((sum, f) => sum + f.montantTTC, 0)
+        total: 8950,
+        enRetard: 3200
       },
       ventesParMois: [
         { mois: 'Jan', montant: 32000, reservations: 22 },
@@ -49,16 +39,13 @@ router.get('/financier', (req, res) => {
         { mois: 'Mai', montant: 38950, reservations: 27 },
         { mois: 'Juin', montant: 45230, reservations: 22 }
       ],
-      topClients: clients
-        .slice(0, 4)
-        .map(client => ({
-          nom: client.entreprise || `${client.prenom} ${client.nom}`,
-          montant: Math.floor(Math.random() * 10000) + 5000,
-          pourcentage: Math.floor(Math.random() * 20) + 10
-        }))
-        .concat([
-          { nom: 'Autres', montant: 11880, pourcentage: 26.3 }
-        ]),
+      topClients: [
+        { nom: 'Entreprise ABC', montant: 12500, pourcentage: 27.6 },
+        { nom: 'Martin Dubois', montant: 8900, pourcentage: 19.7 },
+        { nom: 'Sophie Martin', montant: 6750, pourcentage: 14.9 },
+        { nom: 'Jean Dupont', montant: 5200, pourcentage: 11.5 },
+        { nom: 'Autres', montant: 11880, pourcentage: 26.3 }
+      ],
       repartitionVentes: [
         { categorie: 'Packages voyage', montant: 18500, pourcentage: 40.9 },
         { categorie: 'Billets d\'avion', montant: 12800, pourcentage: 28.3 },
@@ -82,43 +69,39 @@ router.get('/financier', (req, res) => {
 });
 
 // Get client report
-router.get('/clients', (req, res) => {
+router.get('/clients', protect, hasPermission('rapports', 'lire'), (req, res) => {
   try {
     // In a real app, you would get the agenceId from the authenticated user
-    const agenceId = req.headers['x-agence-id'] || '1'; // Default for testing
-    
-    // Get data
-    const clients = readData('clients');
+    const agenceId = req.user?.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
     
     // Calculate stats
     const data = {
-      totalClients: clients.length,
+      totalClients: 89,
       nouveauxClients: {
-        mois: Math.floor(clients.length * 0.2),
+        mois: 18,
         evolution: 15.3
       },
       clientsActifs: {
-        nombre: Math.floor(clients.length * 0.7),
+        nombre: 62,
         pourcentage: 70
       },
       repartition: {
         particuliers: {
-          nombre: clients.filter(c => !c.entreprise).length,
-          pourcentage: Math.round(clients.filter(c => !c.entreprise).length / clients.length * 100)
+          nombre: 65,
+          pourcentage: 73
         },
         entreprises: {
-          nombre: clients.filter(c => c.entreprise).length,
-          pourcentage: Math.round(clients.filter(c => c.entreprise).length / clients.length * 100)
+          nombre: 24,
+          pourcentage: 27
         }
       },
-      topClients: clients
-        .slice(0, 5)
-        .map(client => ({
-          id: client.id,
-          nom: client.entreprise || `${client.prenom} ${client.nom}`,
-          montant: Math.floor(Math.random() * 10000) + 2000,
-          reservations: Math.floor(Math.random() * 10) + 1
-        }))
+      topClients: [
+        { id: '1', nom: 'Entreprise ABC', montant: 12500, reservations: 8 },
+        { id: '2', nom: 'Martin Dubois', montant: 8900, reservations: 5 },
+        { id: '3', nom: 'Sophie Martin', montant: 6750, reservations: 4 },
+        { id: '4', nom: 'Jean Dupont', montant: 5200, reservations: 3 },
+        { id: '5', nom: 'Marie Leroy', montant: 4800, reservations: 3 }
+      ]
     };
     
     res.status(200).json({
@@ -135,13 +118,10 @@ router.get('/clients', (req, res) => {
 });
 
 // Get destination report
-router.get('/destinations', (req, res) => {
+router.get('/destinations', protect, hasPermission('rapports', 'lire'), (req, res) => {
   try {
     // In a real app, you would get the agenceId from the authenticated user
-    const agenceId = req.headers['x-agence-id'] || '1'; // Default for testing
-    
-    // Get data
-    const reservations = readData('reservations');
+    const agenceId = req.user?.agenceId || '60d0fe4f5311236168a109ca'; // Default for testing
     
     // Calculate stats
     const destinations = [
@@ -154,7 +134,7 @@ router.get('/destinations', (req, res) => {
     
     const data = {
       topDestinations: destinations,
-      totalReservations: reservations.length,
+      totalReservations: 156,
       totalCA: destinations.reduce((sum, d) => sum + d.ca, 0),
       repartitionGeographique: [
         { region: 'Europe', pourcentage: 65, montant: 75000 },
@@ -179,7 +159,7 @@ router.get('/destinations', (req, res) => {
 });
 
 // Export report
-router.get('/export/:type', (req, res) => {
+router.get('/export/:type', protect, hasPermission('rapports', 'exporter'), (req, res) => {
   try {
     const { type } = req.params;
     const { format = 'pdf' } = req.query;

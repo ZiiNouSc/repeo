@@ -1,12 +1,46 @@
 const express = require('express');
 const router = express.Router();
-const { readData, writeData, generateId, formatDate } = require('../utils/dataHelper');
+const { protect, admin } = require('../middlewares/authMiddleware');
 
 // Get all audit logs
-router.get('/logs', (req, res) => {
+router.get('/logs', protect, admin, (req, res) => {
   try {
     // In a real app, you would filter logs by user/agence
-    const auditLogs = readData('auditLogs') || [];
+    const auditLogs = [
+      {
+        id: '1',
+        timestamp: '2024-01-15T14:30:25Z',
+        userId: '2',
+        userName: 'Sophie Martin',
+        userRole: 'agence',
+        action: 'CREATE',
+        module: 'clients',
+        description: 'Création du client "Martin Dubois"',
+        ipAddress: '192.168.1.100',
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        success: true,
+        duration: 245,
+        affectedResource: 'client:1',
+        newValue: { nom: 'Dubois', prenom: 'Martin', email: 'martin.dubois@email.com' }
+      },
+      {
+        id: '2',
+        timestamp: '2024-01-15T14:25:10Z',
+        userId: '3',
+        userName: 'Jean Dupont',
+        userRole: 'agent',
+        action: 'UPDATE',
+        module: 'factures',
+        description: 'Modification de la facture FAC-2024-001',
+        ipAddress: '192.168.1.101',
+        userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+        success: true,
+        duration: 189,
+        affectedResource: 'facture:1',
+        oldValue: { montantHT: 1000.00 },
+        newValue: { montantHT: 1200.00 }
+      }
+    ];
     
     // Apply filters
     const { action, module, userRole, success, dateRange } = req.query;
@@ -54,15 +88,13 @@ router.get('/logs', (req, res) => {
 });
 
 // Get audit log stats
-router.get('/stats', (req, res) => {
+router.get('/stats', protect, admin, (req, res) => {
   try {
-    const auditLogs = readData('auditLogs') || [];
-    
     const stats = {
-      totalLogs: auditLogs.length,
-      successCount: auditLogs.filter(log => log.success).length,
-      failureCount: auditLogs.filter(log => !log.success).length,
-      avgDuration: Math.round(auditLogs.reduce((sum, log) => sum + (log.duration || 0), 0) / auditLogs.length) || 0
+      totalLogs: 8,
+      successCount: 6,
+      failureCount: 2,
+      avgDuration: 217
     };
     
     res.status(200).json({
@@ -78,84 +110,14 @@ router.get('/stats', (req, res) => {
   }
 });
 
-// Create audit log entry (usually called internally)
-router.post('/logs', (req, res) => {
-  try {
-    const { 
-      action, 
-      module, 
-      description, 
-      userId, 
-      userName, 
-      userRole, 
-      ipAddress, 
-      userAgent, 
-      success, 
-      duration, 
-      details, 
-      affectedResource, 
-      oldValue, 
-      newValue 
-    } = req.body;
-    
-    if (!action || !module || !description) {
-      return res.status(400).json({
-        success: false,
-        message: 'Informations manquantes'
-      });
-    }
-    
-    const auditLogs = readData('auditLogs') || [];
-    
-    const newLog = {
-      id: generateId(),
-      timestamp: formatDate(new Date()),
-      action,
-      module,
-      description,
-      userId,
-      userName,
-      userRole,
-      ipAddress: ipAddress || req.ip,
-      userAgent,
-      success: success !== undefined ? success : true,
-      duration,
-      details,
-      affectedResource,
-      oldValue,
-      newValue
-    };
-    
-    auditLogs.push(newLog);
-    
-    if (writeData('auditLogs', auditLogs)) {
-      res.status(201).json({
-        success: true,
-        message: 'Log d\'audit créé avec succès',
-        data: newLog
-      });
-    } else {
-      throw new Error('Erreur lors de l\'écriture des données');
-    }
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la création du log d\'audit',
-      error: error.message
-    });
-  }
-});
-
 // Export audit logs
-router.get('/export', (req, res) => {
+router.get('/export', protect, admin, (req, res) => {
   try {
-    const auditLogs = readData('auditLogs') || [];
-    
     // In a real app, this would generate a CSV or JSON file
     res.status(200).json({
       success: true,
       message: 'Logs d\'audit exportés avec succès',
-      data: auditLogs
+      downloadUrl: '/api/audit/download/audit_logs.csv'
     });
   } catch (error) {
     res.status(500).json({

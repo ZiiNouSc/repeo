@@ -1,12 +1,57 @@
 const express = require('express');
 const router = express.Router();
-const { readData, writeData, generateId, formatDate } = require('../utils/dataHelper');
+const { protect } = require('../middlewares/authMiddleware');
 
 // Get all notifications
-router.get('/', (req, res) => {
+router.get('/', protect, (req, res) => {
   try {
     // In a real app, you would filter notifications by user/agence
-    const notifications = readData('notifications') || [];
+    const notifications = [
+      {
+        id: '1',
+        type: 'email',
+        titre: 'Confirmation de réservation',
+        message: 'Votre réservation pour Rome a été confirmée. Détails en pièce jointe.',
+        destinataire: 'martin.dubois@email.com',
+        statut: 'envoye',
+        priorite: 'normale',
+        dateCreation: '2024-01-15T10:30:00Z',
+        dateEnvoi: '2024-01-15T10:32:00Z',
+        dateOuverture: '2024-01-15T11:45:00Z'
+      },
+      {
+        id: '2',
+        type: 'sms',
+        titre: 'Rappel rendez-vous',
+        message: 'Rappel: RDV demain 14h en agence pour finaliser votre dossier voyage.',
+        destinataire: '+33 1 23 45 67 89',
+        statut: 'envoye',
+        priorite: 'haute',
+        dateCreation: '2024-01-14T16:00:00Z',
+        dateEnvoi: '2024-01-14T16:01:00Z'
+      },
+      {
+        id: '3',
+        type: 'email',
+        titre: 'Facture en retard',
+        message: 'Votre facture FAC-2024-001 est en retard de paiement. Merci de régulariser.',
+        destinataire: 'sophie.martin@email.com',
+        statut: 'echec',
+        priorite: 'urgente',
+        dateCreation: '2024-01-13T09:00:00Z',
+        erreur: 'Adresse email invalide'
+      },
+      {
+        id: '4',
+        type: 'push',
+        titre: 'Nouveau message',
+        message: 'Vous avez reçu un nouveau message de votre conseiller voyage.',
+        destinataire: 'Agent Mobile App',
+        statut: 'en_attente',
+        priorite: 'normale',
+        dateCreation: '2024-01-15T14:20:00Z'
+      }
+    ];
     
     res.status(200).json({
       success: true,
@@ -22,7 +67,7 @@ router.get('/', (req, res) => {
 });
 
 // Create new notification
-router.post('/', (req, res) => {
+router.post('/', protect, (req, res) => {
   try {
     const { 
       type, 
@@ -40,32 +85,24 @@ router.post('/', (req, res) => {
       });
     }
     
-    const notifications = readData('notifications') || [];
-    
     const now = new Date();
     const newNotification = {
-      id: generateId(),
+      id: Math.random().toString(36).substring(2, 15),
       type,
       titre,
       message,
       destinataire,
       statut: sendNow ? 'envoye' : 'en_attente',
       priorite,
-      dateCreation: formatDate(now),
-      dateEnvoi: sendNow ? formatDate(now) : undefined
+      dateCreation: now.toISOString(),
+      dateEnvoi: sendNow ? now.toISOString() : undefined
     };
     
-    notifications.push(newNotification);
-    
-    if (writeData('notifications', notifications)) {
-      res.status(201).json({
-        success: true,
-        message: 'Notification créée avec succès',
-        data: newNotification
-      });
-    } else {
-      throw new Error('Erreur lors de l\'écriture des données');
-    }
+    res.status(201).json({
+      success: true,
+      message: 'Notification créée avec succès',
+      data: newNotification
+    });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -76,30 +113,20 @@ router.post('/', (req, res) => {
 });
 
 // Mark notification as read
-router.put('/:id/read', (req, res) => {
+router.put('/:id/read', protect, (req, res) => {
   try {
-    const notifications = readData('notifications') || [];
-    const notificationIndex = notifications.findIndex(n => n.id === req.params.id);
+    // In a real app, this would update the notification in the database
+    const updatedNotification = {
+      id: req.params.id,
+      statut: 'lu',
+      dateOuverture: new Date().toISOString()
+    };
     
-    if (notificationIndex === -1) {
-      return res.status(404).json({
-        success: false,
-        message: 'Notification non trouvée'
-      });
-    }
-    
-    notifications[notificationIndex].statut = 'lu';
-    notifications[notificationIndex].dateOuverture = formatDate(new Date());
-    
-    if (writeData('notifications', notifications)) {
-      res.status(200).json({
-        success: true,
-        message: 'Notification marquée comme lue',
-        data: notifications[notificationIndex]
-      });
-    } else {
-      throw new Error('Erreur lors de l\'écriture des données');
-    }
+    res.status(200).json({
+      success: true,
+      message: 'Notification marquée comme lue',
+      data: updatedNotification
+    });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -109,91 +136,15 @@ router.put('/:id/read', (req, res) => {
   }
 });
 
-// Resend failed notification
-router.post('/:id/resend', (req, res) => {
-  try {
-    const notifications = readData('notifications') || [];
-    const notificationIndex = notifications.findIndex(n => n.id === req.params.id);
-    
-    if (notificationIndex === -1) {
-      return res.status(404).json({
-        success: false,
-        message: 'Notification non trouvée'
-      });
-    }
-    
-    if (notifications[notificationIndex].statut !== 'echec') {
-      return res.status(400).json({
-        success: false,
-        message: 'Seules les notifications en échec peuvent être renvoyées'
-      });
-    }
-    
-    notifications[notificationIndex].statut = 'envoye';
-    notifications[notificationIndex].dateEnvoi = formatDate(new Date());
-    notifications[notificationIndex].erreur = undefined;
-    
-    if (writeData('notifications', notifications)) {
-      res.status(200).json({
-        success: true,
-        message: 'Notification renvoyée avec succès',
-        data: notifications[notificationIndex]
-      });
-    } else {
-      throw new Error('Erreur lors de l\'écriture des données');
-    }
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Erreur lors du renvoi de la notification',
-      error: error.message
-    });
-  }
-});
-
-// Delete notification
-router.delete('/:id', (req, res) => {
-  try {
-    const notifications = readData('notifications') || [];
-    const notificationIndex = notifications.findIndex(n => n.id === req.params.id);
-    
-    if (notificationIndex === -1) {
-      return res.status(404).json({
-        success: false,
-        message: 'Notification non trouvée'
-      });
-    }
-    
-    notifications.splice(notificationIndex, 1);
-    
-    if (writeData('notifications', notifications)) {
-      res.status(200).json({
-        success: true,
-        message: 'Notification supprimée avec succès'
-      });
-    } else {
-      throw new Error('Erreur lors de l\'écriture des données');
-    }
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la suppression de la notification',
-      error: error.message
-    });
-  }
-});
-
 // Get notification stats
-router.get('/stats', (req, res) => {
+router.get('/stats', protect, (req, res) => {
   try {
-    const notifications = readData('notifications') || [];
-    
     const stats = {
-      total: notifications.length,
-      envoyes: notifications.filter(n => n.statut === 'envoye').length,
-      enAttente: notifications.filter(n => n.statut === 'en_attente').length,
-      echecs: notifications.filter(n => n.statut === 'echec').length,
-      lus: notifications.filter(n => n.statut === 'lu').length
+      total: 4,
+      envoyes: 2,
+      enAttente: 1,
+      echecs: 1,
+      lus: 1
     };
     
     res.status(200).json({
