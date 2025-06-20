@@ -64,5 +64,23 @@
       "clients",
       "factures"
     ]
+  },
+  {
+    "id": "dee1e5e6-a74e-4726-b36f-f9cdb2f6219a",
+    "nom": "test",
+    "email": "cc@cc.com",
+    "telephone": "c",
+    "adresse": "cc, cc cc, France",
+    "statut": "en_attente",
+    "dateInscription": "2025-06-20T14:28:08.506Z",
+    "modulesActifs": [],
+    "modulesChoisis": [
+      "clients",
+      "fournisseurs",
+      "factures",
+      "caisse"
+    ],
+    "typeActivite": "agence-voyage",
+    "siret": "cc"
   }
 ]

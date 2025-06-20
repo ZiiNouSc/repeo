@@ -30,28 +30,59 @@
     "permissions": [
       {
         "module": "clients",
-        "actions": ["lire", "creer", "modifier"]
+        "actions": [
+          "lire",
+          "creer",
+          "modifier"
+        ]
       },
       {
         "module": "factures",
-        "actions": ["lire", "creer"]
+        "actions": [
+          "lire",
+          "creer"
+        ]
       },
       {
         "module": "reservations",
-        "actions": ["lire", "creer"]
+        "actions": [
+          "lire",
+          "creer"
+        ]
       },
       {
         "module": "todos",
-        "actions": ["lire", "creer", "modifier"]
+        "actions": [
+          "lire",
+          "creer",
+          "modifier"
+        ]
       },
       {
         "module": "documents",
-        "actions": ["lire", "creer"]
+        "actions": [
+          "lire",
+          "creer"
+        ]
       },
       {
         "module": "calendrier",
-        "actions": ["lire", "creer"]
+        "actions": [
+          "lire",
+          "creer"
+        ]
       }
     ]
+  },
+  {
+    "id": "73766be7-0741-4797-af6d-bc6b3aa920f1",
+    "email": "cc@cc.com",
+    "password": "demo123",
+    "nom": "test",
+    "prenom": "",
+    "role": "agence",
+    "statut": "en_attente",
+    "agenceId": "dee1e5e6-a74e-4726-b36f-f9cdb2f6219a",
+    "dateInscription": "2025-06-20T14:28:08.501Z"
   }
 ]
