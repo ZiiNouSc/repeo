@@ -11,7 +11,7 @@ import {
   Euro,
   Plane,
   Building2,
-  Package,
+  Package as PackageIcon,
   Car,
   Eye
 } from 'lucide-react';
@@ -304,7 +304,7 @@ const RapportsPage: React.FC = () => {
                 index === 1 ? 'bg-green-100' :
                 index === 2 ? 'bg-purple-100' : 'bg-orange-100'
               }`}>
-                {index === 0 && <Package className="w-8 h-8 text-blue-600" />}
+                {index === 0 && <PackageIcon className="w-8 h-8 text-blue-600" />}
                 {index === 1 && <Plane className="w-8 h-8 text-green-600" />}
                 {index === 2 && <Building2 className="w-8 h-8 text-purple-600" />}
                 {index === 3 && <Car className="w-8 h-8 text-orange-600" />}

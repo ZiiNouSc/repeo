@@ -12,7 +12,8 @@ import {
   Phone,
   Filter,
   Download,
-  Upload
+  Upload,
+  Building2
 } from 'lucide-react';
 import { Table, TableHeader, TableBody, TableRow, TableHeaderCell, TableCell } from '../../components/ui/Table';
 import Badge from '../../components/ui/Badge';
@@ -26,8 +27,10 @@ import SearchFilter from '../../components/ui/SearchFilter';
 import StatCard from '../../components/ui/StatCard';
 import { Agent, Permission } from '../../types';
 import { agentsAPI } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 const AgentsPage: React.FC = () => {
+  const { currentAgence, userAgences } = useAuth();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,6 +39,7 @@ const AgentsPage: React.FC = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
+  const [showAgencyAssignModal, setShowAgencyAssignModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
 
@@ -44,7 +48,8 @@ const AgentsPage: React.FC = () => {
     prenom: '',
     email: '',
     telephone: '',
-    permissions: [] as Permission[]
+    permissions: [] as Permission[],
+    agenceId: currentAgence?.id || ''
   });
 
   const filterOptions = [
@@ -78,7 +83,7 @@ const AgentsPage: React.FC = () => {
 
   useEffect(() => {
     fetchAgents();
-  }, []);
+  }, [currentAgence]);
 
   const fetchAgents = async () => {
     try {
@@ -96,7 +101,10 @@ const AgentsPage: React.FC = () => {
     if (!formData.nom || !formData.prenom || !formData.email) return;
 
     try {
-      const response = await agentsAPI.create(formData);
+      const response = await agentsAPI.create({
+        ...formData,
+        agenceId: currentAgence?.id
+      });
       setAgents(prev => [response.data.data, ...prev]);
       setShowAddModal(false);
       resetForm();
@@ -142,6 +150,19 @@ const AgentsPage: React.FC = () => {
     }
   };
 
+  const handleAssignAgency = async () => {
+    if (!selectedAgent) return;
+
+    try {
+      // In a real implementation, you would update the agent's agency assignment
+      // For now, we'll just close the modal
+      setShowAgencyAssignModal(false);
+      setSelectedAgent(null);
+    } catch (error) {
+      console.error('Erreur lors de l\'attribution d\'agence:', error);
+    }
+  };
+
   const handleDeleteAgent = async () => {
     if (!selectedAgent) return;
 
@@ -161,7 +182,8 @@ const AgentsPage: React.FC = () => {
       prenom: '',
       email: '',
       telephone: '',
-      permissions: []
+      permissions: [],
+      agenceId: currentAgence?.id || ''
     });
   };
 
@@ -172,9 +194,15 @@ const AgentsPage: React.FC = () => {
       prenom: agent.prenom,
       email: agent.email,
       telephone: agent.telephone,
-      permissions: [...agent.permissions]
+      permissions: [...agent.permissions],
+      agenceId: currentAgence?.id || ''
     });
     setShowPermissionsModal(true);
+  };
+
+  const openAgencyAssignModal = (agent: Agent) => {
+    setSelectedAgent(agent);
+    setShowAgencyAssignModal(true);
   };
 
   const handlePermissionChange = (moduleId: string, action: string, checked: boolean) => {
@@ -301,6 +329,14 @@ const AgentsPage: React.FC = () => {
             title="Gérer les permissions"
           >
             <Settings className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={() => openAgencyAssignModal(agent)}
+            className="p-1 text-blue-600 hover:bg-blue-100 rounded"
+            title="Attribuer des agences"
+          >
+            <Building2 className="w-4 h-4" />
           </button>
 
           <button
@@ -484,6 +520,14 @@ const AgentsPage: React.FC = () => {
                       </button>
 
                       <button
+                        onClick={() => openAgencyAssignModal(agent)}
+                        className="p-1 text-blue-600 hover:bg-blue-100 rounded"
+                        title="Attribuer des agences"
+                      >
+                        <Building2 className="w-4 h-4" />
+                      </button>
+
+                      <button
                         onClick={() => handleToggleStatus(agent.id)}
                         className={`p-1 rounded ${
                           agent.statut === 'actif' 
@@ -515,12 +559,6 @@ const AgentsPage: React.FC = () => {
               ))}
             </TableBody>
           </Table>
-
-          {filteredAgents.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-gray-500">Aucun agent trouvé</p>
-            </div>
-          )}
         </Card>
       )}
 
@@ -576,6 +614,14 @@ const AgentsPage: React.FC = () => {
                     title="Gérer les permissions"
                   >
                     <Settings className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => openAgencyAssignModal(agent)}
+                    className="p-1 text-blue-600 hover:bg-blue-100 rounded"
+                    title="Attribuer des agences"
+                  >
+                    <Building2 className="w-4 h-4" />
                   </button>
 
                   <button
@@ -660,6 +706,25 @@ const AgentsPage: React.FC = () => {
               onChange={(e) => setFormData(prev => ({ ...prev, telephone: e.target.value }))}
             />
           </div>
+
+          {userAgences.length > 1 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Agence *
+              </label>
+              <select
+                className="input-field"
+                value={formData.agenceId}
+                onChange={(e) => setFormData(prev => ({ ...prev, agenceId: e.target.value }))}
+              >
+                {userAgences.map(agence => (
+                  <option key={agence.id} value={agence.id}>
+                    {agence.nom}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="flex justify-end space-x-3">
             <button
@@ -753,6 +818,73 @@ const AgentsPage: React.FC = () => {
                 className="btn-primary"
               >
                 Enregistrer les permissions
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal attribution d'agence */}
+      <Modal
+        isOpen={showAgencyAssignModal}
+        onClose={() => {
+          setShowAgencyAssignModal(false);
+          setSelectedAgent(null);
+        }}
+        title="Attribuer des agences"
+        size="lg"
+      >
+        {selectedAgent && (
+          <div className="space-y-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="font-medium text-blue-900 mb-2">
+                Attribution d'agences pour {selectedAgent.prenom} {selectedAgent.nom}
+              </h3>
+              <p className="text-sm text-blue-700">
+                Sélectionnez les agences auxquelles cet agent aura accès.
+              </p>
+            </div>
+            
+            <div className="space-y-4">
+              {userAgences.map((agence) => (
+                <div key={agence.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id={`agence-${agence.id}`}
+                      className="mr-3"
+                      // In a real implementation, you would check if the agent is assigned to this agency
+                      defaultChecked={agence.id === currentAgence?.id}
+                    />
+                    <label htmlFor={`agence-${agence.id}`} className="cursor-pointer">
+                      <p className="font-medium text-gray-900">{agence.nom}</p>
+                      <p className="text-sm text-gray-500">{agence.email}</p>
+                    </label>
+                  </div>
+                  <div>
+                    <Badge variant={agence.statut === 'approuve' ? 'success' : 'warning'}>
+                      {agence.statut === 'approuve' ? 'Approuvée' : 'En attente'}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowAgencyAssignModal(false);
+                  setSelectedAgent(null);
+                }}
+                className="btn-secondary"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleAssignAgency}
+                className="btn-primary"
+              >
+                Enregistrer les attributions
               </button>
             </div>
           </div>

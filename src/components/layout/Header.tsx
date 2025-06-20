@@ -8,7 +8,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
-  const { user, logout, switchAgence, currentAgence } = useAuth();
+  const { user, logout, switchAgence, currentAgence, userAgences } = useAuth();
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -81,13 +81,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
   ];
 
   const unreadCount = notifications.filter(n => n.unread).length;
-
-  // Mock list of user's agencies - in a real app, this would come from the auth context
-  const userAgences = user?.role === 'agence' ? [
-    { id: '1', nom: 'Voyages Express' },
-    { id: '2', nom: 'Tourisme International' },
-    { id: '3', nom: 'Évasion Vacances' }
-  ] : [];
 
   return (
     <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 px-6 py-4 sticky top-0 z-40">

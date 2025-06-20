@@ -1,9 +1,16 @@
 import React from 'react';
 import { Clock, Mail, Phone, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const PendingApprovalPage: React.FC = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleTerminate = () => {
+    logout();
+    navigate('/auth/login');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4">
@@ -119,13 +126,13 @@ const PendingApprovalPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Déconnexion */}
+          {/* Terminer */}
           <div className="mt-8 pt-6 border-t border-gray-200">
             <button
-              onClick={logout}
-              className="text-gray-600 hover:text-gray-700 text-sm font-medium"
+              onClick={handleTerminate}
+              className="btn-primary"
             >
-              Se déconnecter
+              Terminer
             </button>
           </div>
         </div>
