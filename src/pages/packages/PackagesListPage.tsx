@@ -24,6 +24,7 @@ const PackagesListPage: React.FC = () => {
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const { hasPermission } = usePermissions();
 
   useEffect(() => {
@@ -43,26 +44,49 @@ const PackagesListPage: React.FC = () => {
   };
 
   const handleToggleVisibility = async (packageId: string) => {
+    if (!packageId) {
+      console.error('Package ID is undefined');
+      return;
+    }
+    
     try {
+      setActionLoading(true);
       await packagesAPI.toggleVisibility(packageId);
       setPackages(prev => prev.map(pkg => 
         pkg.id === packageId 
           ? { ...pkg, visible: !pkg.visible }
           : pkg
       ));
+      
+      // Si le package sélectionné est celui dont on change la visibilité, mettre à jour aussi
+      if (selectedPackage && selectedPackage.id === packageId) {
+        setSelectedPackage(prev => prev ? { ...prev, visible: !prev.visible } : null);
+      }
     } catch (error) {
       console.error('Erreur lors du changement de visibilité:', error);
+      alert('Erreur lors du changement de visibilité: ' + (error.response?.data?.message || 'Erreur inconnue'));
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleDelete = async (packageId: string) => {
+    if (!packageId) {
+      console.error('Package ID is undefined');
+      return;
+    }
+    
     try {
+      setActionLoading(true);
       await packagesAPI.delete(packageId);
       setPackages(prev => prev.filter(pkg => pkg.id !== packageId));
       setShowDeleteModal(false);
       setSelectedPackage(null);
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
+      alert('Erreur lors de la suppression: ' + (error.response?.data?.message || 'Erreur inconnue'));
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -213,7 +237,7 @@ const PackagesListPage: React.FC = () => {
                       <Eye className="w-4 h-4" />
                     </button>
                     
-                    {hasPermission('packages', 'modifier') && (
+                    {hasPermission('packages', 'modifier') && pkg.id && (
                       <Link
                         to={`/packages/${pkg.id}/modifier`}
                         className="p-1 text-gray-600 hover:bg-gray-100 rounded"
@@ -223,19 +247,22 @@ const PackagesListPage: React.FC = () => {
                       </Link>
                     )}
 
-                    <button
-                      onClick={() => handleToggleVisibility(pkg.id)}
-                      className={`p-1 rounded ${
-                        pkg.visible 
-                          ? 'text-orange-600 hover:bg-orange-100' 
-                          : 'text-green-600 hover:bg-green-100'
-                      }`}
-                      title={pkg.visible ? 'Masquer' : 'Rendre visible'}
-                    >
-                      {pkg.visible ? <EyeOff className="w-4 h-4" /> : <Globe className="w-4 h-4" />}
-                    </button>
+                    {pkg.id && (
+                      <button
+                        onClick={() => handleToggleVisibility(pkg.id)}
+                        disabled={actionLoading}
+                        className={`p-1 rounded ${
+                          pkg.visible 
+                            ? 'text-orange-600 hover:bg-orange-100' 
+                            : 'text-green-600 hover:bg-green-100'
+                        }`}
+                        title={pkg.visible ? 'Masquer' : 'Rendre visible'}
+                      >
+                        {pkg.visible ? <EyeOff className="w-4 h-4" /> : <Globe className="w-4 h-4" />}
+                      </button>
+                    )}
 
-                    {hasPermission('packages', 'supprimer') && (
+                    {hasPermission('packages', 'supprimer') && pkg.id && (
                       <button
                         onClick={() => {
                           setSelectedPackage(pkg);
@@ -338,22 +365,27 @@ const PackagesListPage: React.FC = () => {
             </div>
 
             <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => handleToggleVisibility(selectedPackage.id)}
-                className={selectedPackage.visible ? 'btn-secondary' : 'btn-primary'}
-              >
-                {selectedPackage.visible ? (
-                  <>
-                    <EyeOff className="w-4 h-4 mr-2" />
-                    Masquer
-                  </>
-                ) : (
-                  <>
-                    <Globe className="w-4 h-4 mr-2" />
-                    Rendre visible
-                  </>
-                )}
-              </button>
+              {selectedPackage.id && (
+                <button
+                  onClick={() => handleToggleVisibility(selectedPackage.id)}
+                  disabled={actionLoading}
+                  className={selectedPackage.visible ? 'btn-secondary' : 'btn-primary'}
+                >
+                  {actionLoading ? (
+                    <LoadingSpinner size="sm" className="mr-2" />
+                  ) : selectedPackage.visible ? (
+                    <>
+                      <EyeOff className="w-4 h-4 mr-2" />
+                      Masquer
+                    </>
+                  ) : (
+                    <>
+                      <Globe className="w-4 h-4 mr-2" />
+                      Rendre visible
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -376,10 +408,11 @@ const PackagesListPage: React.FC = () => {
             </p>
             <div className="flex space-x-3">
               <button
-                onClick={() => handleDelete(selectedPackage.id)}
+                onClick={() => selectedPackage.id && handleDelete(selectedPackage.id)}
+                disabled={actionLoading}
                 className="btn-danger"
               >
-                Supprimer
+                {actionLoading ? <LoadingSpinner size="sm" className="mr-2" /> : 'Supprimer'}
               </button>
               <button
                 onClick={() => setShowDeleteModal(false)}

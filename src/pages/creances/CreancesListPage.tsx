@@ -13,7 +13,7 @@ import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { Facture } from '../../types';
-import axios from 'axios';
+import { creancesAPI } from '../../services/api';
 
 const CreancesListPage: React.FC = () => {
   const [creances, setCreances] = useState<Facture[]>([]);
@@ -28,6 +28,7 @@ const CreancesListPage: React.FC = () => {
     totalFactures: 0,
     avgDaysLate: 0
   });
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     fetchCreances();
@@ -37,7 +38,7 @@ const CreancesListPage: React.FC = () => {
   const fetchCreances = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/creances');
+      const response = await creancesAPI.getAll();
       
       if (response.data.success) {
         setCreances(response.data.data);
@@ -53,7 +54,7 @@ const CreancesListPage: React.FC = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get('/api/creances/stats');
+      const response = await creancesAPI.getStats();
       
       if (response.data.success) {
         setStats(response.data.data);
@@ -74,15 +75,19 @@ const CreancesListPage: React.FC = () => {
   };
 
   const handleSendReminder = async (creanceId: string) => {
+    if (!creanceId) {
+      console.error('Creance ID is undefined');
+      return;
+    }
+    
     if (!relanceMessage.trim()) {
       alert('Veuillez saisir un message de relance');
       return;
     }
     
     try {
-      const response = await axios.post(`/api/creances/${creanceId}/reminder`, {
-        message: relanceMessage
-      });
+      setActionLoading(true);
+      const response = await creancesAPI.sendReminder(creanceId, relanceMessage);
       
       if (response.data.success) {
         alert('Relance envoyée avec succès');
@@ -93,7 +98,9 @@ const CreancesListPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error sending reminder:', error);
-      alert('Une erreur est survenue lors de l\'envoi de la relance');
+      alert('Une erreur est survenue lors de l\'envoi de la relance: ' + (error.response?.data?.message || 'Erreur inconnue'));
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -279,13 +286,16 @@ L'équipe SamTech`;
                         <AlertTriangle className="w-4 h-4" />
                       </button>
                       
-                      <button
-                        onClick={() => prepareRelanceMessage(creance)}
-                        className="p-1 text-orange-600 hover:bg-orange-100 rounded"
-                        title="Envoyer une relance"
-                      >
-                        <Mail className="w-4 h-4" />
-                      </button>
+                      {creance.id && (
+                        <button
+                          onClick={() => prepareRelanceMessage(creance)}
+                          disabled={actionLoading}
+                          className="p-1 text-orange-600 hover:bg-orange-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Envoyer une relance"
+                        >
+                          <Mail className="w-4 h-4" />
+                        </button>
+                      )}
 
                       <a
                         href={`tel:${creance.client.telephone}`}
@@ -370,16 +380,19 @@ L'équipe SamTech`;
             </div>
 
             <div className="flex justify-end space-x-3">
-              <button 
-                onClick={() => {
-                  setShowDetailModal(false);
-                  prepareRelanceMessage(selectedCreance);
-                }}
-                className="btn-secondary"
-              >
-                <Mail className="w-4 h-4 mr-2" />
-                Envoyer une relance
-              </button>
+              {selectedCreance.id && (
+                <button 
+                  onClick={() => {
+                    setShowDetailModal(false);
+                    prepareRelanceMessage(selectedCreance);
+                  }}
+                  disabled={actionLoading}
+                  className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  Envoyer une relance
+                </button>
+              )}
               <a
                 href={`tel:${selectedCreance.client.telephone}`}
                 className="btn-primary"
@@ -440,10 +453,15 @@ L'équipe SamTech`;
                 Annuler
               </button>
               <button
-                onClick={() => handleSendReminder(selectedCreance.id)}
-                className="btn-primary"
+                onClick={() => selectedCreance.id && handleSendReminder(selectedCreance.id)}
+                disabled={!relanceMessage.trim() || actionLoading}
+                className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Mail className="w-4 h-4 mr-2" />
+                {actionLoading ? (
+                  <LoadingSpinner size="sm" className="mr-2" />
+                ) : (
+                  <Mail className="w-4 h-4 mr-2" />
+                )}
                 Envoyer la relance
               </button>
             </div>

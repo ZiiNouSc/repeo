@@ -35,6 +35,7 @@ const DocumentsPage: React.FC = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
+  const [actionLoading, setActionLoading] = useState(false);
 
   const filterOptions = [
     {
@@ -80,22 +81,35 @@ const DocumentsPage: React.FC = () => {
 
   const handleUploadDocument = async (formData: any) => {
     try {
+      setActionLoading(true);
       const response = await documentsAPI.create(formData);
       setDocuments(prev => [response.data.data, ...prev]);
       setShowUploadModal(false);
     } catch (error) {
       console.error('Erreur lors du téléchargement:', error);
+      alert('Erreur lors du téléchargement: ' + (error.response?.data?.message || 'Erreur inconnue'));
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleDeleteDocument = async (documentId: string) => {
+    if (!documentId) {
+      console.error('Document ID is undefined');
+      return;
+    }
+    
     try {
+      setActionLoading(true);
       await documentsAPI.delete(documentId);
       setDocuments(prev => prev.filter(doc => doc.id !== documentId));
       setShowDetailModal(false);
       setSelectedDocument(null);
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
+      alert('Erreur lors de la suppression: ' + (error.response?.data?.message || 'Erreur inconnue'));
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -209,13 +223,16 @@ const DocumentsPage: React.FC = () => {
         >
           <Download className="w-4 h-4" />
         </button>
-        <button
-          onClick={() => handleDeleteDocument(document.id)}
-          className="p-1 text-red-600 hover:bg-red-100 rounded"
-          title="Supprimer"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        {document.id && (
+          <button
+            onClick={() => handleDeleteDocument(document.id)}
+            disabled={actionLoading}
+            className="p-1 text-red-600 hover:bg-red-100 rounded"
+            title="Supprimer"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
       </div>
     </Card>
   );
@@ -379,13 +396,16 @@ const DocumentsPage: React.FC = () => {
                       >
                         <Download className="w-4 h-4" />
                       </button>
-                      <button
-                        onClick={() => handleDeleteDocument(document.id)}
-                        className="p-1 text-red-600 hover:bg-red-100 rounded"
-                        title="Supprimer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {document.id && (
+                        <button
+                          onClick={() => handleDeleteDocument(document.id)}
+                          disabled={actionLoading}
+                          className="p-1 text-red-600 hover:bg-red-100 rounded"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -583,9 +603,15 @@ const DocumentsPage: React.FC = () => {
                 
                 handleUploadDocument(mockDocument);
               }}
+              disabled={actionLoading}
               className="btn-primary"
             >
-              Télécharger
+              {actionLoading ? <LoadingSpinner size="sm" className="mr-2" /> : (
+                <>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Télécharger
+                </>
+              )}
             </button>
           </div>
         </div>

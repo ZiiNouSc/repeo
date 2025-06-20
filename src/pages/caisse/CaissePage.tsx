@@ -17,7 +17,7 @@ import Modal from '../../components/ui/Modal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { OperationCaisse } from '../../types';
 import { usePermissions } from '../../hooks/usePermissions';
-import axios from 'axios';
+import { caisseAPI } from '../../services/api';
 
 const CaissePage: React.FC = () => {
   const [operations, setOperations] = useState<OperationCaisse[]>([]);
@@ -29,6 +29,7 @@ const CaissePage: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [solde, setSolde] = useState({ total: 0, entrees: 0, sorties: 0 });
+  const [actionLoading, setActionLoading] = useState(false);
   const { hasPermission } = usePermissions();
 
   const [formData, setFormData] = useState({
@@ -61,7 +62,7 @@ const CaissePage: React.FC = () => {
   const fetchOperations = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/caisse/operations');
+      const response = await caisseAPI.getOperations();
       
       if (response.data.success) {
         setOperations(response.data.data);
@@ -77,7 +78,7 @@ const CaissePage: React.FC = () => {
 
   const fetchSolde = async () => {
     try {
-      const response = await axios.get('/api/caisse/solde');
+      const response = await caisseAPI.getSolde();
       
       if (response.data.success) {
         setSolde({
@@ -97,7 +98,8 @@ const CaissePage: React.FC = () => {
     if (!formData.montant || !formData.description || !formData.categorie) return;
 
     try {
-      const response = await axios.post('/api/caisse/operations', {
+      setActionLoading(true);
+      const response = await caisseAPI.addOperation({
         type: formData.type,
         montant: parseFloat(formData.montant),
         description: formData.description,
@@ -121,7 +123,9 @@ const CaissePage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error adding operation:', error);
-      alert('Une erreur est survenue lors de l\'ajout');
+      alert('Une erreur est survenue lors de l\'ajout: ' + (error.response?.data?.message || 'Erreur inconnue'));
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -129,7 +133,8 @@ const CaissePage: React.FC = () => {
     if (!selectedOperation || !formData.montant || !formData.description || !formData.categorie) return;
 
     try {
-      const response = await axios.put(`/api/caisse/operations/${selectedOperation.id}`, {
+      setActionLoading(true);
+      const response = await caisseAPI.updateOperation(selectedOperation.id, {
         type: formData.type,
         montant: parseFloat(formData.montant),
         description: formData.description,
@@ -156,15 +161,18 @@ const CaissePage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error updating operation:', error);
-      alert('Une erreur est survenue lors de la modification');
+      alert('Une erreur est survenue lors de la modification: ' + (error.response?.data?.message || 'Erreur inconnue'));
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleDeleteOperation = async () => {
-    if (!selectedOperation) return;
+    if (!selectedOperation || !selectedOperation.id) return;
 
     try {
-      const response = await axios.delete(`/api/caisse/operations/${selectedOperation.id}`);
+      setActionLoading(true);
+      const response = await caisseAPI.deleteOperation(selectedOperation.id);
       
       if (response.data.success) {
         // Remove the operation from the list
@@ -181,7 +189,9 @@ const CaissePage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error deleting operation:', error);
-      alert('Une erreur est survenue lors de la suppression');
+      alert('Une erreur est survenue lors de la suppression: ' + (error.response?.data?.message || 'Erreur inconnue'));
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -400,7 +410,7 @@ const CaissePage: React.FC = () => {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center space-x-2">
-                    {hasPermission('caisse', 'modifier') && (
+                    {hasPermission('caisse', 'modifier') && operation.id && (
                       <button
                         onClick={() => openEditModal(operation)}
                         className="p-1 text-gray-600 hover:bg-gray-100 rounded"
@@ -410,7 +420,7 @@ const CaissePage: React.FC = () => {
                       </button>
                     )}
 
-                    {hasPermission('caisse', 'supprimer') && (
+                    {hasPermission('caisse', 'supprimer') && operation.id && (
                       <button
                         onClick={() => {
                           setSelectedOperation(operation);
@@ -545,10 +555,10 @@ const CaissePage: React.FC = () => {
             </button>
             <button
               onClick={handleAddOperation}
-              disabled={!formData.montant || !formData.description || !formData.categorie}
+              disabled={!formData.montant || !formData.description || !formData.categorie || actionLoading}
               className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Ajouter l'opération
+              {actionLoading ? <LoadingSpinner size="sm" className="mr-2" /> : 'Ajouter l\'opération'}
             </button>
           </div>
         </div>
@@ -665,10 +675,10 @@ const CaissePage: React.FC = () => {
             </button>
             <button
               onClick={handleEditOperation}
-              disabled={!formData.montant || !formData.description || !formData.categorie}
+              disabled={!formData.montant || !formData.description || !formData.categorie || actionLoading}
               className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Modifier l'opération
+              {actionLoading ? <LoadingSpinner size="sm" className="mr-2" /> : 'Modifier l\'opération'}
             </button>
           </div>
         </div>
@@ -704,9 +714,10 @@ const CaissePage: React.FC = () => {
             <div className="flex space-x-3">
               <button
                 onClick={handleDeleteOperation}
+                disabled={actionLoading}
                 className="btn-danger"
               >
-                Supprimer
+                {actionLoading ? <LoadingSpinner size="sm" className="mr-2" /> : 'Supprimer'}
               </button>
               <button
                 onClick={() => {

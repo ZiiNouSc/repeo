@@ -41,6 +41,7 @@ const ClientsListPageEnhanced: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
+  const [actionLoading, setActionLoading] = useState(false);
   const { hasPermission } = usePermissions();
 
   const filterOptions = [
@@ -89,13 +90,22 @@ const ClientsListPageEnhanced: React.FC = () => {
   };
 
   const handleDelete = async (clientId: string) => {
+    if (!clientId) {
+      console.error('Client ID is undefined');
+      return;
+    }
+    
     try {
+      setActionLoading(true);
       await clientsAPI.delete(clientId);
       setClients(prev => prev.filter(client => client.id !== clientId));
       setShowDeleteModal(false);
       setSelectedClient(null);
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
+      alert('Erreur lors de la suppression: ' + (error.response?.data?.message || 'Erreur inconnue'));
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -215,7 +225,7 @@ const ClientsListPageEnhanced: React.FC = () => {
             <Eye className="w-4 h-4" />
           </button>
           
-          {hasPermission('clients', 'modifier') && (
+          {hasPermission('clients', 'modifier') && client.id && (
             <Link
               to={`/clients/${client.id}/modifier`}
               className="p-1 text-gray-600 hover:bg-gray-100 rounded"
@@ -225,7 +235,7 @@ const ClientsListPageEnhanced: React.FC = () => {
             </Link>
           )}
 
-          {hasPermission('clients', 'supprimer') && (
+          {hasPermission('clients', 'supprimer') && client.id && (
             <button
               onClick={() => {
                 setSelectedClient(client);
@@ -291,7 +301,7 @@ const ClientsListPageEnhanced: React.FC = () => {
             <Eye className="w-4 h-4" />
           </button>
           
-          {hasPermission('clients', 'modifier') && (
+          {hasPermission('clients', 'modifier') && client.id && (
             <Link
               to={`/clients/${client.id}/modifier`}
               className="p-1 text-gray-600 hover:bg-gray-100 rounded"
@@ -301,7 +311,7 @@ const ClientsListPageEnhanced: React.FC = () => {
             </Link>
           )}
 
-          {hasPermission('clients', 'supprimer') && (
+          {hasPermission('clients', 'supprimer') && client.id && (
             <button
               onClick={() => {
                 setSelectedClient(client);
@@ -493,7 +503,7 @@ const ClientsListPageEnhanced: React.FC = () => {
                             <Eye className="w-4 h-4" />
                           </button>
                           
-                          {hasPermission('clients', 'modifier') && (
+                          {hasPermission('clients', 'modifier') && client.id && (
                             <Link
                               to={`/clients/${client.id}/modifier`}
                               className="p-1 text-gray-600 hover:bg-gray-100 rounded"
@@ -503,7 +513,7 @@ const ClientsListPageEnhanced: React.FC = () => {
                             </Link>
                           )}
 
-                          {hasPermission('clients', 'supprimer') && (
+                          {hasPermission('clients', 'supprimer') && client.id && (
                             <button
                               onClick={() => {
                                 setSelectedClient(client);
@@ -594,12 +604,14 @@ const ClientsListPageEnhanced: React.FC = () => {
             </div>
 
             <div className="flex justify-end space-x-3">
-              <Link
-                to={`/clients/${selectedClient.id}`}
-                className="btn-primary"
-              >
-                Voir le profil complet
-              </Link>
+              {selectedClient.id && (
+                <Link
+                  to={`/clients/${selectedClient.id}`}
+                  className="btn-primary"
+                >
+                  Voir le profil complet
+                </Link>
+              )}
             </div>
           </div>
         )}
@@ -624,10 +636,11 @@ const ClientsListPageEnhanced: React.FC = () => {
             </p>
             <div className="flex space-x-3">
               <button
-                onClick={() => handleDelete(selectedClient.id)}
+                onClick={() => selectedClient.id && handleDelete(selectedClient.id)}
+                disabled={actionLoading}
                 className="btn-danger"
               >
-                Supprimer
+                {actionLoading ? <LoadingSpinner size="sm" className="mr-2" /> : 'Supprimer'}
               </button>
               <button
                 onClick={() => setShowDeleteModal(false)}

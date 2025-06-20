@@ -17,7 +17,7 @@ import Modal from '../../components/ui/Modal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { BonCommande } from '../../types';
 import { usePermissions } from '../../hooks/usePermissions';
-import axios from 'axios';
+import { bonCommandeAPI } from '../../services/api';
 
 const BonsCommandeListPage: React.FC = () => {
   const [bonsCommande, setBonsCommande] = useState<BonCommande[]>([]);
@@ -26,6 +26,7 @@ const BonsCommandeListPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('tous');
   const [selectedBon, setSelectedBon] = useState<BonCommande | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const { hasPermission } = usePermissions();
 
   useEffect(() => {
@@ -35,7 +36,7 @@ const BonsCommandeListPage: React.FC = () => {
   const fetchBonsCommande = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/bons-commande');
+      const response = await bonCommandeAPI.getAll();
       
       if (response.data.success) {
         setBonsCommande(response.data.data);
@@ -50,8 +51,14 @@ const BonsCommandeListPage: React.FC = () => {
   };
 
   const handleConvertToInvoice = async (bonId: string) => {
+    if (!bonId) {
+      console.error('Bon ID is undefined');
+      return;
+    }
+    
     try {
-      const response = await axios.post(`/api/bons-commande/${bonId}/convert`);
+      setActionLoading(true);
+      const response = await bonCommandeAPI.convertToInvoice(bonId);
       
       if (response.data.success) {
         // Update the local state
@@ -71,7 +78,9 @@ const BonsCommandeListPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error converting to invoice:', error);
-      alert('Une erreur est survenue lors de la conversion');
+      alert('Une erreur est survenue lors de la conversion: ' + (error.response?.data?.message || 'Erreur inconnue'));
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -226,7 +235,7 @@ const BonsCommandeListPage: React.FC = () => {
                       <Eye className="w-4 h-4" />
                     </button>
                     
-                    {hasPermission('bons-commande', 'modifier') && bon.statut !== 'facture' && (
+                    {hasPermission('bons-commande', 'modifier') && bon.statut !== 'facture' && bon.id && (
                       <Link
                         to={`/bons-commande/${bon.id}/modifier`}
                         className="p-1 text-gray-600 hover:bg-gray-100 rounded"
@@ -236,10 +245,11 @@ const BonsCommandeListPage: React.FC = () => {
                       </Link>
                     )}
 
-                    {bon.statut === 'accepte' && hasPermission('factures', 'creer') && (
+                    {bon.statut === 'accepte' && hasPermission('factures', 'creer') && bon.id && (
                       <button
                         onClick={() => handleConvertToInvoice(bon.id)}
-                        className="p-1 text-purple-600 hover:bg-purple-100 rounded"
+                        disabled={actionLoading}
+                        className="p-1 text-purple-600 hover:bg-purple-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Convertir en facture"
                       >
                         <FileText className="w-4 h-4" />
@@ -354,8 +364,8 @@ const BonsCommandeListPage: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {selectedBon.articles.map((article) => (
-                      <TableRow key={article.id}>
+                    {selectedBon.articles.map((article, index) => (
+                      <TableRow key={article.id || index}>
                         <TableCell>{article.designation}</TableCell>
                         <TableCell>{article.quantite}</TableCell>
                         <TableCell>
@@ -378,12 +388,17 @@ const BonsCommandeListPage: React.FC = () => {
             </div>
 
             <div className="flex justify-end space-x-3">
-              {selectedBon.statut === 'accepte' && (
+              {selectedBon.statut === 'accepte' && selectedBon.id && (
                 <button 
                   onClick={() => handleConvertToInvoice(selectedBon.id)}
-                  className="btn-primary"
+                  disabled={actionLoading}
+                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <FileText className="w-4 h-4 mr-2" />
+                  {actionLoading ? (
+                    <LoadingSpinner size="sm" className="mr-2" />
+                  ) : (
+                    <FileText className="w-4 h-4 mr-2" />
+                  )}
                   Convertir en facture
                 </button>
               )}

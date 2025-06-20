@@ -18,7 +18,7 @@ import Modal from '../../components/ui/Modal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { Facture } from '../../types';
 import { usePermissions } from '../../hooks/usePermissions';
-import axios from 'axios';
+import { facturesAPI } from '../../services/api';
 
 const FacturesListPage: React.FC = () => {
   const [factures, setFactures] = useState<Facture[]>([]);
@@ -27,6 +27,7 @@ const FacturesListPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('tous');
   const [selectedFacture, setSelectedFacture] = useState<Facture | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const { hasPermission } = usePermissions();
 
   useEffect(() => {
@@ -36,7 +37,7 @@ const FacturesListPage: React.FC = () => {
   const fetchFactures = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/factures');
+      const response = await facturesAPI.getAll();
       
       if (response.data.success) {
         setFactures(response.data.data);
@@ -51,8 +52,14 @@ const FacturesListPage: React.FC = () => {
   };
 
   const handleMarkAsPaid = async (factureId: string) => {
+    if (!factureId) {
+      console.error('Facture ID is undefined');
+      return;
+    }
+    
     try {
-      const response = await axios.put(`/api/factures/${factureId}/pay`);
+      setActionLoading(true);
+      const response = await facturesAPI.markAsPaid(factureId);
       
       if (response.data.success) {
         // Update the local state
@@ -71,16 +78,22 @@ const FacturesListPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
-      alert('Une erreur est survenue lors du marquage comme payée');
+      alert('Une erreur est survenue lors du marquage comme payée: ' + (error.response?.data?.message || 'Erreur inconnue'));
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleGeneratePDF = async (factureId: string) => {
+    if (!factureId) {
+      console.error('Facture ID is undefined');
+      return;
+    }
+    
     try {
+      setActionLoading(true);
       // Use axios to get the PDF with responseType blob
-      const response = await axios.get(`/api/factures/${factureId}/pdf`, {
-        responseType: 'blob'
-      });
+      const response = await facturesAPI.generatePDF(factureId);
       
       // Create a blob URL and trigger download
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -92,7 +105,9 @@ const FacturesListPage: React.FC = () => {
       link.remove();
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('Une erreur est survenue lors de la génération du PDF');
+      alert('Une erreur est survenue lors de la génération du PDF: ' + (error.response?.data?.message || 'Erreur inconnue'));
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -250,7 +265,7 @@ const FacturesListPage: React.FC = () => {
                       <Eye className="w-4 h-4" />
                     </button>
                     
-                    {hasPermission('factures', 'modifier') && facture.statut !== 'payee' && (
+                    {hasPermission('factures', 'modifier') && facture.statut !== 'payee' && facture.id && (
                       <Link
                         to={`/factures/${facture.id}/modifier`}
                         className="p-1 text-gray-600 hover:bg-gray-100 rounded"
@@ -260,13 +275,16 @@ const FacturesListPage: React.FC = () => {
                       </Link>
                     )}
 
-                    <button
-                      onClick={() => handleGeneratePDF(facture.id)}
-                      className="p-1 text-green-600 hover:bg-green-100 rounded"
-                      title="Télécharger PDF"
-                    >
-                      <Download className="w-4 h-4" />
-                    </button>
+                    {facture.id && (
+                      <button
+                        onClick={() => handleGeneratePDF(facture.id)}
+                        disabled={actionLoading}
+                        className="p-1 text-green-600 hover:bg-green-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Télécharger PDF"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                    )}
 
                     {facture.statut === 'brouillon' && (
                       <button
@@ -277,10 +295,11 @@ const FacturesListPage: React.FC = () => {
                       </button>
                     )}
 
-                    {facture.statut !== 'payee' && hasPermission('factures', 'modifier') && (
+                    {facture.statut !== 'payee' && hasPermission('factures', 'modifier') && facture.id && (
                       <button
                         onClick={() => handleMarkAsPaid(facture.id)}
-                        className="p-1 text-green-600 hover:bg-green-100 rounded"
+                        disabled={actionLoading}
+                        className="p-1 text-green-600 hover:bg-green-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Marquer comme payée"
                       >
                         <CheckCircle className="w-4 h-4" />
@@ -390,8 +409,8 @@ const FacturesListPage: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {selectedFacture.articles.map((article) => (
-                      <TableRow key={article.id}>
+                    {selectedFacture.articles.map((article, index) => (
+                      <TableRow key={article.id || index}>
                         <TableCell>{article.designation}</TableCell>
                         <TableCell>{article.quantite}</TableCell>
                         <TableCell>
@@ -414,19 +433,31 @@ const FacturesListPage: React.FC = () => {
             </div>
 
             <div className="flex justify-end space-x-3">
-              <button 
-                onClick={() => handleGeneratePDF(selectedFacture.id)}
-                className="btn-secondary"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Télécharger PDF
-              </button>
-              {selectedFacture.statut !== 'payee' && (
+              {selectedFacture.id && (
+                <button 
+                  onClick={() => handleGeneratePDF(selectedFacture.id)}
+                  disabled={actionLoading}
+                  className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {actionLoading ? (
+                    <LoadingSpinner size="sm" className="mr-2" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-2" />
+                  )}
+                  Télécharger PDF
+                </button>
+              )}
+              {selectedFacture.statut !== 'payee' && selectedFacture.id && (
                 <button 
                   onClick={() => handleMarkAsPaid(selectedFacture.id)}
-                  className="btn-primary"
+                  disabled={actionLoading}
+                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <CheckCircle className="w-4 h-4 mr-2" />
+                  {actionLoading ? (
+                    <LoadingSpinner size="sm" className="mr-2" />
+                  ) : (
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                  )}
                   Marquer comme payée
                 </button>
               )}

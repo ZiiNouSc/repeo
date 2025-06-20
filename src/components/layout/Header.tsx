@@ -33,8 +33,10 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
   };
 
   const handleSwitchAgence = (agenceId: string) => {
-    switchAgence(agenceId);
-    setShowAgencesMenu(false);
+    if (agenceId) {
+      switchAgence(agenceId);
+      setShowAgencesMenu(false);
+    }
   };
 
   useEffect(() => {
@@ -113,7 +115,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
               >
                 <Building2 className="w-5 h-5 text-gray-600" />
                 <span className="text-sm font-medium text-gray-700 hidden md:block">
-                  {currentAgence?.nom || userAgences[0].nom}
+                  {currentAgence?.nom || userAgences[0]?.nom || 'Sélectionner une agence'}
                 </span>
                 <ChevronDown className="w-4 h-4 text-gray-500" />
               </button>
@@ -130,7 +132,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
                         key={agence.id}
                         onClick={() => handleSwitchAgence(agence.id)}
                         className={`w-full flex items-center px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
-                          (currentAgence?.id || userAgences[0].id) === agence.id 
+                          (currentAgence?.id || userAgences[0]?.id) === agence.id 
                             ? 'text-blue-600 font-medium' 
                             : 'text-gray-700'
                         }`}

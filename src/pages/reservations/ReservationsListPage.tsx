@@ -38,6 +38,7 @@ const ReservationsListPage: React.FC = () => {
   const [selectedReservation, setSelectedReservation] = useState<any | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
+  const [updateStatusLoading, setUpdateStatusLoading] = useState(false);
 
   const filterOptions = [
     {
@@ -94,14 +95,23 @@ const ReservationsListPage: React.FC = () => {
     }
     
     try {
+      setUpdateStatusLoading(true);
       await reservationsAPI.updateStatus(reservationId, newStatus);
       setReservations(prev => prev.map(reservation => 
         reservation.id === reservationId 
           ? { ...reservation, statut: newStatus }
           : reservation
       ));
+      
+      // Si la réservation sélectionnée est celle dont on change le statut, mettre à jour aussi
+      if (selectedReservation && selectedReservation.id === reservationId) {
+        setSelectedReservation(prev => prev ? { ...prev, statut: newStatus } : null);
+      }
     } catch (error) {
       console.error('Erreur lors de la mise à jour du statut:', error);
+      alert('Erreur lors de la mise à jour du statut: ' + (error.response?.data?.message || 'Erreur inconnue'));
+    } finally {
+      setUpdateStatusLoading(false);
     }
   };
 
@@ -116,9 +126,9 @@ const ReservationsListPage: React.FC = () => {
   const filteredReservations = reservations.filter(reservation => {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = (
-      reservation.numero.toLowerCase().includes(searchLower) ||
-      reservation.clientNom.toLowerCase().includes(searchLower) ||
-      reservation.destination.toLowerCase().includes(searchLower)
+      reservation.numero?.toLowerCase().includes(searchLower) ||
+      reservation.clientNom?.toLowerCase().includes(searchLower) ||
+      reservation.destination?.toLowerCase().includes(searchLower)
     );
 
     const typeFilter = activeFilters.type;
@@ -404,13 +414,15 @@ const ReservationsListPage: React.FC = () => {
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          <Link
-                            to={`/reservations/${reservation.id}/modifier`}
-                            className="p-1 text-gray-600 hover:bg-gray-100 rounded"
-                            title="Modifier"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Link>
+                          {reservation.id && (
+                            <Link
+                              to={`/reservations/${reservation.id}/modifier`}
+                              className="p-1 text-gray-600 hover:bg-gray-100 rounded"
+                              title="Modifier"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Link>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -476,13 +488,15 @@ const ReservationsListPage: React.FC = () => {
                       >
                         <Eye className="w-4 h-4" />
                       </button>
-                      <Link
-                        to={`/reservations/${reservation.id}/modifier`}
-                        className="p-1 text-gray-600 hover:bg-gray-100 rounded"
-                        title="Modifier"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Link>
+                      {reservation.id && (
+                        <Link
+                          to={`/reservations/${reservation.id}/modifier`}
+                          className="p-1 text-gray-600 hover:bg-gray-100 rounded"
+                          title="Modifier"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </Card>
@@ -603,37 +617,45 @@ const ReservationsListPage: React.FC = () => {
             )}
 
             <div className="flex justify-end space-x-3">
-              <Link
-                to={`/reservations/${selectedReservation.id}/modifier`}
-                className="btn-secondary"
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                Modifier
-              </Link>
+              {selectedReservation.id && (
+                <Link
+                  to={`/reservations/${selectedReservation.id}/modifier`}
+                  className="btn-secondary"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Modifier
+                </Link>
+              )}
               <button 
                 onClick={() => {
-                  if (selectedReservation.statut === 'en_attente') {
-                    handleUpdateStatus(selectedReservation.id, 'confirmee');
-                  } else if (selectedReservation.statut === 'confirmee') {
-                    handleUpdateStatus(selectedReservation.id, 'terminee');
+                  if (selectedReservation.id) {
+                    if (selectedReservation.statut === 'en_attente') {
+                      handleUpdateStatus(selectedReservation.id, 'confirmee');
+                    } else if (selectedReservation.statut === 'confirmee') {
+                      handleUpdateStatus(selectedReservation.id, 'terminee');
+                    }
+                    setShowDetailModal(false);
                   }
-                  setShowDetailModal(false);
                 }}
                 className="btn-primary"
-                disabled={selectedReservation.statut === 'terminee' || selectedReservation.statut === 'annulee'}
+                disabled={!selectedReservation.id || updateStatusLoading || selectedReservation.statut === 'terminee' || selectedReservation.statut === 'annulee'}
               >
-                {selectedReservation.statut === 'en_attente' ? (
-                  <>
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Confirmer
-                  </>
-                ) : selectedReservation.statut === 'confirmee' ? (
-                  <>
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Marquer comme terminée
-                  </>
+                {updateStatusLoading ? (
+                  <LoadingSpinner size="sm" className="mr-2" />
                 ) : (
-                  'Générer les documents'
+                  selectedReservation.statut === 'en_attente' ? (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Confirmer
+                    </>
+                  ) : selectedReservation.statut === 'confirmee' ? (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Marquer comme terminée
+                    </>
+                  ) : (
+                    'Générer les documents'
+                  )
                 )}
               </button>
             </div>

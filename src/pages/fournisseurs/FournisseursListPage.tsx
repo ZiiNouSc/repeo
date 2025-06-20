@@ -16,6 +16,7 @@ import Modal from '../../components/ui/Modal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { Fournisseur } from '../../types';
 import { usePermissions } from '../../hooks/usePermissions';
+import { fournisseursAPI } from '../../services/api';
 
 const FournisseursListPage: React.FC = () => {
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
@@ -24,62 +25,42 @@ const FournisseursListPage: React.FC = () => {
   const [selectedFournisseur, setSelectedFournisseur] = useState<Fournisseur | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const { hasPermission } = usePermissions();
 
   useEffect(() => {
-    const fetchFournisseurs = async () => {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setFournisseurs([
-          {
-            id: '1',
-            nom: 'Transport Express',
-            entreprise: 'Transport Express SARL',
-            email: 'contact@transport-express.com',
-            telephone: '+33 1 23 45 67 89',
-            adresse: '123 Rue du Transport, 75001 Paris',
-            solde: -2500.00,
-            dateCreation: '2024-01-10'
-          },
-          {
-            id: '2',
-            nom: 'Hôtel Partenaire',
-            entreprise: 'Hôtels & Résidences SA',
-            email: 'reservations@hotel-partenaire.com',
-            telephone: '+33 1 98 76 54 32',
-            adresse: '456 Avenue Hospitality, 69002 Lyon',
-            solde: 1200.50,
-            dateCreation: '2024-01-08'
-          },
-          {
-            id: '3',
-            nom: 'Compagnie Aérienne',
-            entreprise: 'SkyLine Airlines',
-            email: 'b2b@skyline-air.com',
-            telephone: '+33 4 56 78 90 12',
-            adresse: '789 Boulevard Aviation, 13001 Marseille',
-            solde: 0,
-            dateCreation: '2024-01-05'
-          }
-        ]);
-      } catch (error) {
-        console.error('Erreur lors du chargement des fournisseurs:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchFournisseurs();
   }, []);
 
-  const handleDelete = async (fournisseurId: string) => {
+  const fetchFournisseurs = async () => {
     try {
+      setLoading(true);
+      const response = await fournisseursAPI.getAll();
+      setFournisseurs(response.data.data);
+    } catch (error) {
+      console.error('Erreur lors du chargement des fournisseurs:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (fournisseurId: string) => {
+    if (!fournisseurId) {
+      console.error('Fournisseur ID is undefined');
+      return;
+    }
+    
+    try {
+      setActionLoading(true);
+      await fournisseursAPI.delete(fournisseurId);
       setFournisseurs(prev => prev.filter(f => f.id !== fournisseurId));
       setShowDeleteModal(false);
       setSelectedFournisseur(null);
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
+      alert('Erreur lors de la suppression: ' + (error.response?.data?.message || 'Erreur inconnue'));
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -201,7 +182,7 @@ const FournisseursListPage: React.FC = () => {
                       <Eye className="w-4 h-4" />
                     </button>
                     
-                    {hasPermission('fournisseurs', 'modifier') && (
+                    {hasPermission('fournisseurs', 'modifier') && fournisseur.id && (
                       <Link
                         to={`/fournisseurs/${fournisseur.id}/modifier`}
                         className="p-1 text-gray-600 hover:bg-gray-100 rounded"
@@ -211,7 +192,7 @@ const FournisseursListPage: React.FC = () => {
                       </Link>
                     )}
 
-                    {hasPermission('fournisseurs', 'supprimer') && (
+                    {hasPermission('fournisseurs', 'supprimer') && fournisseur.id && (
                       <button
                         onClick={() => {
                           setSelectedFournisseur(fournisseur);
@@ -316,10 +297,11 @@ const FournisseursListPage: React.FC = () => {
             </p>
             <div className="flex space-x-3">
               <button
-                onClick={() => handleDelete(selectedFournisseur.id)}
+                onClick={() => selectedFournisseur.id && handleDelete(selectedFournisseur.id)}
+                disabled={actionLoading}
                 className="btn-danger"
               >
-                Supprimer
+                {actionLoading ? <LoadingSpinner size="sm" className="mr-2" /> : 'Supprimer'}
               </button>
               <button
                 onClick={() => setShowDeleteModal(false)}

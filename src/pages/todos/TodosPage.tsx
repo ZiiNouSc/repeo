@@ -42,6 +42,7 @@ const TodosPage: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
+  const [actionLoading, setActionLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     titre: '',
@@ -104,6 +105,7 @@ const TodosPage: React.FC = () => {
     if (!formData.titre || !formData.dateEcheance) return;
 
     try {
+      setActionLoading(true);
       const response = await todosAPI.create({
         titre: formData.titre,
         description: formData.description,
@@ -119,11 +121,20 @@ const TodosPage: React.FC = () => {
       resetForm();
     } catch (error) {
       console.error('Erreur lors de l\'ajout:', error);
+      alert('Erreur lors de l\'ajout: ' + (error.response?.data?.message || 'Erreur inconnue'));
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleToggleStatus = async (todoId: string) => {
+    if (!todoId) {
+      console.error('Todo ID is undefined');
+      return;
+    }
+    
     try {
+      setActionLoading(true);
       await todosAPI.toggleStatus(todoId);
       
       // Update local state
@@ -147,19 +158,26 @@ const TodosPage: React.FC = () => {
       }));
     } catch (error) {
       console.error('Erreur lors de la mise à jour:', error);
+      alert('Erreur lors de la mise à jour: ' + (error.response?.data?.message || 'Erreur inconnue'));
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleDeleteTodo = async () => {
-    if (!selectedTodo) return;
+    if (!selectedTodo || !selectedTodo.id) return;
 
     try {
+      setActionLoading(true);
       await todosAPI.delete(selectedTodo.id);
       setTodos(prev => prev.filter(todo => todo.id !== selectedTodo.id));
       setShowDeleteModal(false);
       setSelectedTodo(null);
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
+      alert('Erreur lors de la suppression: ' + (error.response?.data?.message || 'Erreur inconnue'));
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -200,7 +218,7 @@ const TodosPage: React.FC = () => {
   const filteredTodos = todos.filter(todo => {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = todo.titre.toLowerCase().includes(searchLower) ||
-                         todo.description.toLowerCase().includes(searchLower) ||
+                         todo.description?.toLowerCase().includes(searchLower) ||
                          (todo.clientNom && todo.clientNom.toLowerCase().includes(searchLower));
     
     const statutFilter = activeFilters.statut;
@@ -247,8 +265,9 @@ const TodosPage: React.FC = () => {
     <Card key={todo.id} hover className="h-full">
       <div className="flex items-start space-x-3">
         <button
-          onClick={() => handleToggleStatus(todo.id)}
-          className="mt-1 text-gray-400 hover:text-blue-600 transition-colors"
+          onClick={() => todo.id && handleToggleStatus(todo.id)}
+          disabled={actionLoading}
+          className="mt-1 text-gray-400 hover:text-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {todo.statut === 'termine' ? (
             <CheckSquare className="w-5 h-5 text-green-600" />
@@ -301,23 +320,29 @@ const TodosPage: React.FC = () => {
       </div>
       
       <div className="flex justify-end space-x-2 mt-4 pt-4 border-t border-gray-100">
-        <button
-          onClick={() => openEditModal(todo)}
-          className="p-1 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-          title="Modifier"
-        >
-          <Edit className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => {
-            setSelectedTodo(todo);
-            setShowDeleteModal(true);
-          }}
-          className="p-1 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-          title="Supprimer"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        {todo.id && (
+          <>
+            <button
+              onClick={() => openEditModal(todo)}
+              disabled={actionLoading}
+              className="p-1 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Modifier"
+            >
+              <Edit className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => {
+                setSelectedTodo(todo);
+                setShowDeleteModal(true);
+              }}
+              disabled={actionLoading}
+              className="p-1 text-red-600 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Supprimer"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </>
+        )}
       </div>
     </Card>
   );
@@ -422,8 +447,9 @@ const TodosPage: React.FC = () => {
                   <TableCell>
                     <div className="flex items-start space-x-3">
                       <button
-                        onClick={() => handleToggleStatus(todo.id)}
-                        className="mt-1 text-gray-400 hover:text-blue-600 transition-colors"
+                        onClick={() => todo.id && handleToggleStatus(todo.id)}
+                        disabled={actionLoading}
+                        className="mt-1 text-gray-400 hover:text-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {todo.statut === 'termine' ? (
                           <CheckSquare className="w-5 h-5 text-green-600" />
@@ -487,24 +513,30 @@ const TodosPage: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => openEditModal(todo)}
-                        className="p-1 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="Modifier"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
+                      {todo.id && (
+                        <>
+                          <button
+                            onClick={() => openEditModal(todo)}
+                            disabled={actionLoading}
+                            className="p-1 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Modifier"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
 
-                      <button
-                        onClick={() => {
-                          setSelectedTodo(todo);
-                          setShowDeleteModal(true);
-                        }}
-                        className="p-1 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                        title="Supprimer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                          <button
+                            onClick={() => {
+                              setSelectedTodo(todo);
+                              setShowDeleteModal(true);
+                            }}
+                            disabled={actionLoading}
+                            className="p-1 text-red-600 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Supprimer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -533,8 +565,9 @@ const TodosPage: React.FC = () => {
             <Card key={todo.id} padding="sm" className="hover:bg-gray-50 transition-colors">
               <div className="flex items-center">
                 <button
-                  onClick={() => handleToggleStatus(todo.id)}
-                  className="mr-3 text-gray-400 hover:text-blue-600 transition-colors"
+                  onClick={() => todo.id && handleToggleStatus(todo.id)}
+                  disabled={actionLoading}
+                  className="mr-3 text-gray-400 hover:text-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {todo.statut === 'termine' ? (
                     <CheckSquare className="w-5 h-5 text-green-600" />
@@ -585,23 +618,29 @@ const TodosPage: React.FC = () => {
                     {todo.statut === 'en_attente' ? 'En attente' :
                      todo.statut === 'en_cours' ? 'En cours' : 'Terminé'}
                   </Badge>
-                  <button
-                    onClick={() => openEditModal(todo)}
-                    className="p-1 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Modifier"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedTodo(todo);
-                      setShowDeleteModal(true);
-                    }}
-                    className="p-1 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                    title="Supprimer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {todo.id && (
+                    <>
+                      <button
+                        onClick={() => openEditModal(todo)}
+                        disabled={actionLoading}
+                        className="p-1 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Modifier"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedTodo(todo);
+                          setShowDeleteModal(true);
+                        }}
+                        disabled={actionLoading}
+                        className="p-1 text-red-600 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Supprimer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </Card>
@@ -738,10 +777,10 @@ const TodosPage: React.FC = () => {
             </button>
             <button
               onClick={handleAddTodo}
-              disabled={!formData.titre || !formData.dateEcheance}
+              disabled={!formData.titre || !formData.dateEcheance || actionLoading}
               className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Créer la tâche
+              {actionLoading ? <LoadingSpinner size="sm" className="mr-2" /> : 'Créer la tâche'}
             </button>
           </div>
         </div>
@@ -876,8 +915,9 @@ const TodosPage: React.FC = () => {
             </button>
             <button
               onClick={() => {
-                if (!selectedTodo) return;
+                if (!selectedTodo || !selectedTodo.id) return;
                 
+                setActionLoading(true);
                 todosAPI.update(selectedTodo.id, {
                   titre: formData.titre,
                   description: formData.description,
@@ -896,12 +936,15 @@ const TodosPage: React.FC = () => {
                   resetForm();
                 }).catch(error => {
                   console.error('Erreur lors de la mise à jour:', error);
+                  alert('Erreur lors de la mise à jour: ' + (error.response?.data?.message || 'Erreur inconnue'));
+                }).finally(() => {
+                  setActionLoading(false);
                 });
               }}
-              disabled={!formData.titre || !formData.dateEcheance}
+              disabled={!formData.titre || !formData.dateEcheance || actionLoading}
               className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Enregistrer
+              {actionLoading ? <LoadingSpinner size="sm" className="mr-2" /> : 'Enregistrer'}
             </button>
           </div>
         </div>
@@ -928,9 +971,10 @@ const TodosPage: React.FC = () => {
             <div className="flex space-x-3">
               <button
                 onClick={handleDeleteTodo}
+                disabled={actionLoading}
                 className="btn-danger"
               >
-                Supprimer
+                {actionLoading ? <LoadingSpinner size="sm" className="mr-2" /> : 'Supprimer'}
               </button>
               <button
                 onClick={() => {
