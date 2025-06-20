@@ -15,7 +15,8 @@ import {
   Plane,
   FolderOpen,
   Clock,
-  Store
+  Store,
+  CheckSquare
 } from 'lucide-react';
 import { Table, TableHeader, TableBody, TableRow, TableHeaderCell, TableCell } from '../../components/ui/Table';
 import Badge from '../../components/ui/Badge';

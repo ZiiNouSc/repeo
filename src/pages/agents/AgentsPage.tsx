@@ -26,8 +26,8 @@ import Card from '../../components/ui/Card';
 import SearchFilter from '../../components/ui/SearchFilter';
 import StatCard from '../../components/ui/StatCard';
 import { Agent, Permission } from '../../types';
-import { agentsAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { agentsAPI } from '../../services/api';
 
 const AgentsPage: React.FC = () => {
   const { currentAgence, userAgences } = useAuth();
