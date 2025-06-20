@@ -24,6 +24,17 @@ const AgencesListPage: React.FC = () => {
   const [selectedAgence, setSelectedAgence] = useState<Agence | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showModulesModal, setShowModulesModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const [formData, setFormData] = useState({
+    nom: '',
+    email: '',
+    telephone: '',
+    adresse: '',
+    typeActivite: 'agence-voyage',
+    siret: '',
+    modulesActifs: [] as string[]
+  });
 
   const availableModules = [
     { id: 'clients', name: 'Clients', description: 'Gestion des clients', essential: true },
@@ -56,6 +67,20 @@ const AgencesListPage: React.FC = () => {
       console.error('Erreur lors du chargement des agences:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateAgence = async () => {
+    try {
+      const response = await agencesAPI.create(formData);
+      if (response.data.success) {
+        setAgences(prev => [...prev, response.data.data]);
+        setShowCreateModal(false);
+        resetForm();
+      }
+    } catch (error) {
+      console.error('Erreur lors de la création de l\'agence:', error);
+      alert('Erreur: ' + (error.response?.data?.message || 'Une erreur est survenue'));
     }
   };
 
@@ -112,6 +137,18 @@ const AgencesListPage: React.FC = () => {
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      nom: '',
+      email: '',
+      telephone: '',
+      adresse: '',
+      typeActivite: 'agence-voyage',
+      siret: '',
+      modulesActifs: []
+    });
+  };
+
   const filteredAgences = agences.filter(agence => {
     const matchesSearch = agence.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          agence.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -135,6 +172,13 @@ const AgencesListPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Gestion des Agences</h1>
           <p className="text-gray-600">Gérer les agences et leurs permissions</p>
         </div>
+        <button 
+          onClick={() => setShowCreateModal(true)}
+          className="btn-primary"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Nouvelle Agence
+        </button>
       </div>
 
       {/* Filtres */}
@@ -355,6 +399,25 @@ const AgencesListPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Modules demandés */}
+            {selectedAgence.modulesDemandes && selectedAgence.modulesDemandes.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Modules demandés
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {selectedAgence.modulesDemandes.map(moduleId => {
+                    const module = availableModules.find(m => m.id === moduleId);
+                    return (
+                      <Badge key={moduleId} variant="warning">
+                        {module ? module.name : moduleId}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {selectedAgence.statut === 'en_attente' && (
               <div className="flex space-x-3">
                 <button
@@ -445,6 +508,163 @@ const AgencesListPage: React.FC = () => {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Modal création agence */}
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => {
+          setShowCreateModal(false);
+          resetForm();
+        }}
+        title="Nouvelle agence"
+        size="lg"
+      >
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nom de l'agence *
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                value={formData.nom}
+                onChange={(e) => setFormData(prev => ({ ...prev, nom: e.target.value }))}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Type d'activité *
+              </label>
+              <select
+                className="input-field"
+                value={formData.typeActivite}
+                onChange={(e) => setFormData(prev => ({ ...prev, typeActivite: e.target.value }))}
+                required
+              >
+                <option value="agence-voyage">Agence de voyage</option>
+                <option value="tour-operateur">Tour opérateur</option>
+                <option value="receptif">Réceptif</option>
+                <option value="transport">Transport touristique</option>
+                <option value="hebergement">Hébergement</option>
+                <option value="autre">Autre</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email *
+              </label>
+              <input
+                type="email"
+                className="input-field"
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Téléphone *
+              </label>
+              <input
+                type="tel"
+                className="input-field"
+                value={formData.telephone}
+                onChange={(e) => setFormData(prev => ({ ...prev, telephone: e.target.value }))}
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Adresse *
+            </label>
+            <input
+              type="text"
+              className="input-field"
+              value={formData.adresse}
+              onChange={(e) => setFormData(prev => ({ ...prev, adresse: e.target.value }))}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              SIRET
+            </label>
+            <input
+              type="text"
+              className="input-field"
+              value={formData.siret}
+              onChange={(e) => setFormData(prev => ({ ...prev, siret: e.target.value }))}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Modules actifs
+            </label>
+            <div className="space-y-3">
+              {availableModules.map((module) => (
+                <div key={module.id} className="flex items-start space-x-3">
+                  <input
+                    type="checkbox"
+                    id={`create-${module.id}`}
+                    checked={formData.modulesActifs.includes(module.id)}
+                    onChange={(e) => {
+                      const isChecked = e.target.checked;
+                      const updatedModules = isChecked
+                        ? [...formData.modulesActifs, module.id]
+                        : formData.modulesActifs.filter(m => m !== module.id);
+                      
+                      setFormData(prev => ({
+                        ...prev,
+                        modulesActifs: updatedModules
+                      }));
+                    }}
+                    className="mt-1"
+                  />
+                  <label htmlFor={`create-${module.id}`} className="flex-1">
+                    <div className="flex items-center">
+                      <p className="font-medium text-gray-900">{module.name}</p>
+                      {module.essential && (
+                        <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                          Essentiel
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-500">{module.description}</p>
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={() => {
+                setShowCreateModal(false);
+                resetForm();
+              }}
+              className="btn-secondary"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={handleCreateAgence}
+              disabled={!formData.nom || !formData.email || !formData.telephone || !formData.adresse}
+              className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Créer l'agence
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
